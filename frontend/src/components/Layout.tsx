@@ -190,7 +190,7 @@ function Footer() {
             </li>
             <li>
               <a href="https://pablomourato.fr" className="hover:text-paper">
-                Réalisé par Pablo Correia Mourato
+                Code et design réalisés par Pablo Correia Mourato
               </a>
             </li>
           </ul>
