@@ -148,7 +148,8 @@ Documentation complète et interactive : `/swagger-ui.html`.
 
 ## Déploiement
 
-- **API + base** sur [Render](https://render.com) : le fichier `render.yaml` décrit le service Docker et la base PostgreSQL (New → Blueprint).
+- **API** sur [Render](https://render.com) : le fichier `render.yaml` décrit le service Docker (New → Blueprint).
+- **Base** PostgreSQL sur [Neon](https://neon.tech), transmise à l'API par `DB_URL` (au format JDBC, connexion directe), `DB_USER` et `DB_PASSWORD`.
 - **Front** sur [Vercel](https://vercel.com) : dossier racine `frontend`, variable `VITE_API_URL` = URL de l'API. `vercel.json` redirige toutes les routes vers `index.html` (application monopage).
 - Côté API, `CORS_ALLOWED_ORIGINS` et `FRONTEND_URL` reçoivent l'URL du front.
 

@@ -1,9 +1,10 @@
-# Blueprint Render : API Spring Boot (Docker) + PostgreSQL managé.
+# Blueprint Render : API Spring Boot (Docker). La base PostgreSQL est chez Neon.
 # Render → New → Blueprint → sélectionner ce dépôt. Les valeurs "sync: false" sont demandées à la création.
 services:
   - type: web
     name: creno-api
     runtime: docker
+    region: frankfurt # même région que la base Neon (eu-central-1)
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -13,33 +14,16 @@ services:
         value: demo # crée le salon et les comptes de démonstration au premier démarrage
       - key: JWT_SECRET
         generateValue: true
-      - key: DB_HOST
-        fromDatabase:
-          name: creno-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: creno-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: creno-db
-          property: database
+      # Base PostgreSQL hébergée sur Neon (gratuite sans limite de durée, contrairement à celle de Render).
+      # Utiliser la connexion directe (sans "-pooler") : Flyway pose des verrous que le pooler ne gère pas.
+      - key: DB_URL
+        sync: false # ex. jdbc:postgresql://ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require
       - key: DB_USER
-        fromDatabase:
-          name: creno-db
-          property: user
+        sync: false # ex. neondb_owner
       - key: DB_PASSWORD
-        fromDatabase:
-          name: creno-db
-          property: password
+        sync: false
       - key: CORS_ALLOWED_ORIGINS
         sync: false # ex. https://creno.vercel.app
       - key: FRONTEND_URL
         sync: false # même valeur : sert aux liens dans les emails
 
-databases:
-  - name: creno-db
-    plan: free
-    databaseName: creno
-    user: creno
