@@ -14,8 +14,10 @@ Les clients réservent un créneau en quelques clics, le commerçant gère ses p
 | ✅ | Catalogue des prestations (durée, prix) | CRUD des prestations, activation / désactivation |
 | ✅ | Horaires et fermetures à venir | Horaires hebdomadaires (plusieurs plages par jour) |
 | ✅ | Inscription / connexion | Fermetures exceptionnelles (congés, jours fériés) |
-| 🔜 | Choix d'un créneau libre et réservation | Planning jour / semaine |
-| 🔜 | Mes rendez-vous, annulation | Statut des RDV (honoré, absent, annulé) |
+| ✅ | Choix d'un jour et d'un créneau libre, réservation | |
+| ✅ | Mes rendez-vous, annulation (jusqu'à 2 h avant) | |
+| 🔜 | | Planning jour / semaine |
+| 🔜 | | Statut des RDV (honoré, absent, annulé) |
 
 ## Stack
 
@@ -34,7 +36,8 @@ creno/
 │       ├── user/            utilisateurs et rôles (CLIENT, ADMIN)
 │       ├── offering/        prestations (catalogue public + admin)
 │       ├── schedule/        horaires d'ouverture et fermetures
-│       ├── appointment/     rendez-vous
+│       ├── availability/    calcul des créneaux disponibles
+│       ├── appointment/     réservation, mes rendez-vous, annulation
 │       ├── config/          sécurité, CORS, OpenAPI, horloge
 │       └── common/          erreurs métier → ProblemDetail (RFC 9457)
 ├── frontend/                SPA React
@@ -50,7 +53,10 @@ Le code back est organisé **par fonctionnalité** (et non par couche technique)
 
 ## Choix techniques
 
-- **Anti double-réservation au niveau de la base.** Une contrainte PostgreSQL `EXCLUDE USING gist` interdit que deux rendez-vous actifs se chevauchent, même si deux clients valident le même créneau à la même milliseconde. La réservation vérifiera aussi la disponibilité côté applicatif (semaine 2), mais la base reste le dernier rempart.
+- **Calcul des créneaux dans une classe pure** (`SlotCalculator`) : horaires du jour, pas de 15 min, durée de la prestation, RDV existants et délai minimum sont passés en paramètres. Aucune dépendance à Spring ni à la base, donc des tests unitaires simples, y compris sur le changement d'heure.
+- **Anti double-réservation en deux barrières.** À la réservation, l'API recalcule les créneaux et refuse toute heure qui n'en fait pas partie (on ne fait jamais confiance à l'heure envoyée par le client). Si deux clients passent cette vérification au même instant, une contrainte PostgreSQL `EXCLUDE USING gist` refuse le second enregistrement, traduit en 409. Un test lance 8 réservations simultanées du même créneau : une seule réussit.
+- **Fuseau horaire maîtrisé** : les horaires du salon sont en heure de Paris, les RDV sont stockés en instants UTC (`timestamptz`), et le front affiche toujours l'heure du salon, quel que soit le fuseau du visiteur.
+- **La sélection vit dans l'URL** (`/reserver/2?date=…&start=…`) : un visiteur non connecté qui choisit un créneau le retrouve après s'être connecté.
 - **JWT via le resource server de Spring Security** plutôt qu'un filtre maison : la validation de la signature et de l'expiration est assurée par une brique éprouvée, et les rôles sont lus depuis le claim `roles`.
 - **Schéma géré uniquement par Flyway** (`ddl-auto: validate`) : chaque évolution de la base est versionnée et rejouable.
 - **Prix stockés en centimes** (entiers) pour éviter les erreurs d'arrondi des nombres flottants.
@@ -103,6 +109,10 @@ Les tests d'intégration tournent contre un vrai PostgreSQL, avec les migrations
 | POST | `/api/auth/register`, `/api/auth/login` | public |
 | GET | `/api/auth/me` | connecté |
 | GET | `/api/services`, `/api/opening-hours`, `/api/closures` | public |
+| GET | `/api/services/{id}/availability?date=YYYY-MM-DD` | public |
+| POST | `/api/appointments` | connecté |
+| GET | `/api/appointments/me` | connecté |
+| POST | `/api/appointments/{id}/cancel` | propriétaire du RDV |
 | GET / POST / PUT / DELETE | `/api/admin/services[/{id}]` | ADMIN |
 | PUT | `/api/admin/opening-hours` | ADMIN |
 | POST / DELETE | `/api/admin/closures[/{id}]` | ADMIN |
@@ -112,7 +122,7 @@ Documentation complète et interactive : `/swagger-ui.html`.
 ## Feuille de route
 
 - [x] **Semaine 1** : fondations, authentification, prestations, horaires
-- [ ] **Semaine 2** : calcul des créneaux disponibles, réservation, espace client
+- [x] **Semaine 2** : calcul des créneaux disponibles, réservation, espace client
 - [ ] **Semaine 3** : planning commerçant, emails de confirmation, déploiement
 - [ ] **v2** : plusieurs employés, paiement d'acompte, rappels SMS, multi-commerces
 
