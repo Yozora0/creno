@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
-import { useNextSlot } from '../api/appointments'
+import { useState } from 'react'
+import { useAdminPlanning, useMyAppointments, useNextSlot } from '../api/appointments'
 import { useClosures, useOpeningHours } from '../api/schedule'
 import { useServices } from '../api/services'
 import { useAuth } from '../auth/useAuth'
@@ -12,10 +13,13 @@ import {
   formatPrice,
   formatTime,
   relativeDay,
+  addDays,
+  formatInstantTime,
+  shopDateOf,
   todayInShop,
 } from '../lib/format'
 import { SHOP } from '../lib/shop'
-import type { ServiceOffering } from '../lib/types'
+import type { AdminAppointment, Appointment, ServiceOffering } from '../lib/types'
 
 export function HomePage() {
   const services = useServices()
@@ -91,10 +95,8 @@ function Hero({ firstService }: { firstService?: ServiceOffering }) {
   )
 }
 
-/** Composition graphique : une arche (miroir de salon) et le prochain créneau réellement disponible. */
+/** Composition graphique : une arche (miroir de salon) et une carte flottante dynamique. */
 function HeroVisual({ firstService }: { firstService?: ServiceOffering }) {
-  const next = useNextSlot(firstService?.id, todayInShop())
-
   return (
     <div className="relative mx-auto w-full max-w-[18rem] animate-fade-up [animation-delay:150ms] sm:max-w-md">
       <div className="relative aspect-[4/5] overflow-hidden rounded-t-full rounded-b-3xl bg-brand shadow-lift">
@@ -132,37 +134,121 @@ function HeroVisual({ firstService }: { firstService?: ServiceOffering }) {
         </svg>
       </div>
 
-      {/* Carte flottante : prochain créneau */}
-      <div className="absolute -bottom-8 -left-6 w-72 rounded-2xl border border-line bg-surface p-4 shadow-lift sm:-left-10">
-        <p className="flex items-center gap-2 text-xs font-medium text-muted">
-          <span className="relative flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand/60" />
-            <span className="relative inline-flex size-2 rounded-full bg-brand" />
-          </span>
-          Prochain créneau disponible
-        </p>
-        {next.data ? (
-          <Link
-            to={`/reserver/${firstService?.id}?date=${next.data.date}&start=${encodeURIComponent(next.data.slot.startAt)}`}
-            className="group mt-2 block"
-          >
-            <p className="font-display text-xl first-letter:uppercase">
-              {relativeDay(next.data.date)} · {formatHour(next.data.slot.time)}
-            </p>
-            <p className="mt-0.5 flex items-center justify-between text-sm text-muted">
-              {firstService?.name}
-              <Icon name="arrow" className="size-4 text-brand transition-transform group-hover:translate-x-1" />
-            </p>
-          </Link>
-        ) : (
-          <p className="mt-2 font-display text-xl text-muted">{next.isPending ? 'Recherche…' : 'Bientôt'}</p>
-        )}
-      </div>
+      <NextCard firstService={firstService} />
 
       <div className="absolute top-10 -right-6 flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-xs font-medium shadow-soft sm:-right-8">
         <Icon name="mail" className="size-4 text-accent" />
         Confirmation par email
       </div>
+    </div>
+  )
+}
+
+/**
+ * Carte flottante du hero, adaptée à la personne connectée :
+ * - commerçant : le prochain RDV prévu au salon ;
+ * - client ayant un RDV à venir : son prochain RDV ;
+ * - sinon : le prochain créneau libre, pour inciter à réserver.
+ */
+function NextCard({ firstService }: { firstService?: ServiceOffering }) {
+  const { user } = useAuth()
+  const today = todayInShop()
+  const isAdmin = user?.role === 'ADMIN'
+  const isClient = user?.role === 'CLIENT'
+  const [now] = useState(() => Date.now())
+
+  const planning = useAdminPlanning(today, addDays(today, 30), isAdmin)
+  const mine = useMyAppointments(isClient)
+
+  const upcoming = (list: { startAt: string; status: string }[] | undefined) =>
+    list
+      ?.filter((a) => a.status === 'BOOKED' && new Date(a.startAt).getTime() > now)
+      .sort((a, b) => a.startAt.localeCompare(b.startAt))[0]
+
+  const nextForShop = isAdmin ? (upcoming(planning.data) as AdminAppointment | undefined) : undefined
+  const nextForClient = isClient ? (upcoming(mine.data) as Appointment | undefined) : undefined
+  const showSlot = !isAdmin && !(isClient && (mine.isPending || nextForClient))
+  const slot = useNextSlot(showSlot ? firstService?.id : undefined, today)
+
+  if (isAdmin) {
+    return (
+      <FloatingCard
+        label="Prochain rendez-vous au salon"
+        loading={planning.isPending}
+        to="/admin/planning"
+        title={
+          nextForShop && `${relativeDay(shopDateOf(nextForShop.startAt))} · ${formatInstantTime(nextForShop.startAt)}`
+        }
+        subtitle={nextForShop && `${nextForShop.clientName} · ${nextForShop.serviceName}`}
+        empty="Aucun RDV prévu"
+      />
+    )
+  }
+  if (isClient && !showSlot) {
+    return (
+      <FloatingCard
+        label="Votre prochain rendez-vous"
+        loading={mine.isPending}
+        to="/mes-rendez-vous"
+        title={
+          nextForClient &&
+          `${relativeDay(shopDateOf(nextForClient.startAt))} · ${formatInstantTime(nextForClient.startAt)}`
+        }
+        subtitle={nextForClient?.serviceName}
+      />
+    )
+  }
+  return (
+    <FloatingCard
+      label="Prochain créneau disponible"
+      loading={slot.isPending}
+      to={
+        slot.data
+          ? `/reserver/${firstService?.id}?date=${slot.data.date}&start=${encodeURIComponent(slot.data.slot.startAt)}`
+          : '/#prestations'
+      }
+      title={slot.data ? `${relativeDay(slot.data.date)} · ${formatHour(slot.data.slot.time)}` : undefined}
+      subtitle={firstService?.name}
+      empty="Bientôt"
+    />
+  )
+}
+
+function FloatingCard({
+  label,
+  title,
+  subtitle,
+  to,
+  loading,
+  empty = '—',
+}: {
+  label: string
+  title?: string
+  subtitle?: string
+  to: string
+  loading: boolean
+  empty?: string
+}) {
+  return (
+    <div className="absolute -bottom-8 -left-6 w-72 rounded-2xl border border-line bg-surface p-4 shadow-lift sm:-left-10">
+      <p className="flex items-center gap-2 text-xs font-medium text-muted">
+        <span className="relative flex size-2">
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand/60" />
+          <span className="relative inline-flex size-2 rounded-full bg-brand" />
+        </span>
+        {label}
+      </p>
+      {title ? (
+        <Link to={to} className="group mt-2 block">
+          <p className="font-display text-xl first-letter:uppercase">{title}</p>
+          <p className="mt-0.5 flex items-center justify-between gap-2 text-sm text-muted">
+            <span className="truncate">{subtitle}</span>
+            <Icon name="arrow" className="size-4 shrink-0 text-brand transition-transform group-hover:translate-x-1" />
+          </p>
+        </Link>
+      ) : (
+        <p className="mt-2 font-display text-xl text-muted">{loading ? 'Recherche…' : empty}</p>
+      )}
     </div>
   )
 }

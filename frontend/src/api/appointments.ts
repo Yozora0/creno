@@ -31,9 +31,10 @@ export function useBookAppointment() {
   })
 }
 
-export function useMyAppointments() {
+export function useMyAppointments(enabled = true) {
   return useQuery({
     queryKey: keys.mine,
+    enabled,
     queryFn: () => api.get<Appointment[]>('/api/appointments/me'),
   })
 }
@@ -52,9 +53,10 @@ export function useCancelAppointment() {
 
 // ---------- Back-office ----------
 
-export function useAdminPlanning(from: string, to: string) {
+export function useAdminPlanning(from: string, to: string, enabled = true) {
   return useQuery({
     queryKey: ['admin', 'appointments', from, to],
+    enabled,
     queryFn: () => api.get<AdminAppointment[]>(`/api/admin/appointments?from=${from}&to=${to}`),
     placeholderData: keepPreviousData,
   })

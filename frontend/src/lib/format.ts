@@ -95,3 +95,6 @@ export function relativeDay(isoDate: string) {
   if (isoDate === addDays(today, 1)) return 'Demain'
   return formatDayLong(isoDate)
 }
+
+/** Date "YYYY-MM-DD" à l'heure du salon d'un instant ISO. */
+export const shopDateOf = (iso: string) => isoDay.format(new Date(iso))

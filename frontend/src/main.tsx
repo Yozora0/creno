@@ -41,7 +41,7 @@ const router = createBrowserRouter([
       {
         path: '/mes-rendez-vous',
         element: (
-          <RequireAuth>
+          <RequireAuth role="CLIENT">
             <MyAppointmentsPage />
           </RequireAuth>
         ),

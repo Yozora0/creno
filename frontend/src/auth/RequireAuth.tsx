@@ -14,6 +14,7 @@ export function RequireAuth({ role, children }: { role?: Role; children: ReactNo
 
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/connexion" replace state={{ from: location.pathname + location.search }} />
-  if (role && user.role !== role) return <Navigate to="/" replace />
+  // Mauvais rôle : chacun est renvoyé vers son espace (le commerçant vers le back-office).
+  if (role && user.role !== role) return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/'} replace />
   return children
 }

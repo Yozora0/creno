@@ -38,7 +38,7 @@ export function Layout() {
       <NavLink to="/" end className={navClass}>
         Accueil
       </NavLink>
-      {user && (
+      {user?.role === 'CLIENT' && (
         <NavLink to="/mes-rendez-vous" className={navClass}>
           Mes rendez-vous
         </NavLink>
@@ -81,9 +81,12 @@ export function Layout() {
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Navigation principale">
             {links}
-            <ButtonLink to="/#prestations" size="md" className="ml-2">
-              Réserver
-            </ButtonLink>
+            {/* Le commerçant ne réserve pas pour lui-même : pas de bouton « Réserver » */}
+            {user?.role !== 'ADMIN' && (
+              <ButtonLink to="/#prestations" size="md" className="ml-2">
+                Réserver
+              </ButtonLink>
+            )}
           </nav>
 
           <button
@@ -107,9 +110,11 @@ export function Layout() {
             onClick={(e) => (e.target as HTMLElement).closest('a, button') && setMenuOpen(false)}
           >
             {links}
-            <ButtonLink to="/#prestations" className="mt-2">
-              Réserver un créneau
-            </ButtonLink>
+            {user?.role !== 'ADMIN' && (
+              <ButtonLink to="/#prestations" className="mt-2">
+                Réserver un créneau
+              </ButtonLink>
+            )}
           </nav>
         )}
       </header>
