@@ -19,24 +19,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
+  /**
+   * Changement d'utilisateur : on vide TOUT le cache de requêtes. Sinon des données propres
+   * à l'ancien compte (ex. « Mes rendez-vous ») seraient réaffichées au compte suivant.
+   */
+  const switchUser = useCallback(
+    (next: User | null) => {
+      queryClient.clear()
+      setUser(next)
+    },
+    [queryClient],
+  )
+
   const logout = useCallback(() => {
     tokenStorage.clear()
-    setUser(null)
-    queryClient.removeQueries({ queryKey: ['admin'] })
-  }, [queryClient])
+    switchUser(null)
+  }, [switchUser])
 
   // Déconnexion automatique si l'API répond 401 (token expiré).
   useEffect(() => {
-    const onUnauthorized = () => setUser(null)
+    const onUnauthorized = () => switchUser(null)
     window.addEventListener('creno:unauthorized', onUnauthorized)
     return () => window.removeEventListener('creno:unauthorized', onUnauthorized)
-  }, [])
+  }, [switchUser])
 
-  const handleAuth = useCallback((res: AuthResponse) => {
-    tokenStorage.set(res.token)
-    setUser(res.user)
-    return res.user
-  }, [])
+  const handleAuth = useCallback(
+    (res: AuthResponse) => {
+      tokenStorage.set(res.token)
+      switchUser(res.user)
+      return res.user
+    },
+    [switchUser],
+  )
 
   const login = useCallback(
     (email: string, password: string) =>
