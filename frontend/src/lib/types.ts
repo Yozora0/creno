@@ -69,3 +69,17 @@ export interface Appointment {
   status: AppointmentStatus
   cancellable: boolean
 }
+
+export interface AdminAppointment {
+  id: number
+  startAt: string
+  endAt: string
+  status: AppointmentStatus
+  serviceId: number
+  serviceName: string
+  priceCents: number
+  clientId: number
+  clientName: string
+  clientEmail: string
+  clientPhone: string | null
+}

@@ -49,7 +49,7 @@ export function ServicesAdminPage() {
       {isError && <Alert>{error.message}</Alert>}
 
       {data && (
-        <Card className="overflow-x-auto p-0">
+        <Card className="overflow-x-auto" padding="p-0">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line text-xs tracking-wide text-muted uppercase">
               <tr>

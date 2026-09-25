@@ -10,6 +10,7 @@ import { ApiError } from './lib/api'
 import { BookingPage } from './pages/BookingPage'
 import { MyAppointmentsPage } from './pages/MyAppointmentsPage'
 import { AdminLayout } from './pages/admin/AdminLayout'
+import { PlanningPage } from './pages/admin/PlanningPage'
 import { ScheduleAdminPage } from './pages/admin/ScheduleAdminPage'
 import { ServicesAdminPage } from './pages/admin/ServicesAdminPage'
 import { HomePage } from './pages/HomePage'
@@ -51,7 +52,8 @@ const router = createBrowserRouter([
           </RequireAuth>
         ),
         children: [
-          { index: true, element: <Navigate to="prestations" replace /> },
+          { index: true, element: <Navigate to="planning" replace /> },
+          { path: 'planning', element: <PlanningPage /> },
           { path: 'prestations', element: <ServicesAdminPage /> },
           { path: 'horaires', element: <ScheduleAdminPage /> },
         ],

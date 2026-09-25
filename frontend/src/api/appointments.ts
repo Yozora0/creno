@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
-import type { Appointment, Slot } from '../lib/types'
+import type { AdminAppointment, Appointment, AppointmentStatus, Slot } from '../lib/types'
 
 const keys = {
   availability: (serviceId: number, date: string) => ['availability', serviceId, date] as const,
@@ -44,6 +44,29 @@ export function useCancelAppointment() {
     onSettled: () =>
       Promise.all([
         qc.invalidateQueries({ queryKey: keys.mine }),
+        qc.invalidateQueries({ queryKey: ['availability'] }),
+      ]),
+  })
+}
+
+// ---------- Back-office ----------
+
+export function useAdminPlanning(from: string, to: string) {
+  return useQuery({
+    queryKey: ['admin', 'appointments', from, to],
+    queryFn: () => api.get<AdminAppointment[]>(`/api/admin/appointments?from=${from}&to=${to}`),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useChangeAppointmentStatus() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: AppointmentStatus }) =>
+      api.patch<AdminAppointment>(`/api/admin/appointments/${id}/status`, { status }),
+    onSettled: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ['admin', 'appointments'] }),
         qc.invalidateQueries({ queryKey: ['availability'] }),
       ]),
   })

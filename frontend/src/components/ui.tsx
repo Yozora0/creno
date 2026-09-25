@@ -14,15 +14,17 @@ const variants: Record<Variant, string> = {
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
+  size?: 'sm' | 'md'
   loading?: boolean
 }
 
-export function Button({ variant = 'primary', loading, disabled, className, children, ...props }: ButtonProps) {
+export function Button({ variant = 'primary', size = 'md', loading, disabled, className, children, ...props }: ButtonProps) {
   return (
     <button
       disabled={disabled || loading}
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+        'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors',
+        size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-sm',
         'disabled:cursor-not-allowed disabled:opacity-60',
         variants[variant],
         className,
@@ -81,8 +83,9 @@ export function Field({
   )
 }
 
-export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cx('rounded-2xl border border-line bg-surface p-6', className)}>{children}</div>
+/** padding : classe de marge interne (p-6 par défaut). Passée à part pour ne pas entrer en conflit avec className. */
+export function Card({ className, padding = 'p-6', children }: { className?: string; padding?: string; children: ReactNode }) {
+  return <div className={cx('rounded-2xl border border-line bg-surface', padding, className)}>{children}</div>
 }
 
 export function Alert({ tone = 'danger', children }: { tone?: 'danger' | 'success'; children: ReactNode }) {
@@ -108,12 +111,18 @@ export function Spinner({ label = 'Chargement…' }: { label?: string }) {
   )
 }
 
-export function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'brand'; children: ReactNode }) {
+const badgeTones = {
+  neutral: 'bg-ink/5 text-muted',
+  brand: 'bg-brand-soft text-brand',
+  danger: 'bg-danger-soft text-danger',
+}
+
+export function Badge({ tone = 'neutral', children }: { tone?: keyof typeof badgeTones; children: ReactNode }) {
   return (
     <span
       className={cx(
         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-        tone === 'brand' ? 'bg-brand-soft text-brand' : 'bg-ink/5 text-muted',
+        badgeTones[tone],
       )}
     >
       {children}

@@ -91,7 +91,8 @@ function AppointmentCard({
 }) {
   return (
     <Card
-      className={`flex flex-wrap items-center justify-between gap-4 p-5 ${highlighted ? 'border-brand ring-2 ring-brand/15' : ''} ${
+      padding="p-5"
+      className={`flex flex-wrap items-center justify-between gap-4 ${highlighted ? 'border-brand ring-2 ring-brand/15' : ''} ${
         muted ? 'opacity-70' : ''
       }`}
     >

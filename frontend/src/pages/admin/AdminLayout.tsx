@@ -9,7 +9,10 @@ export function AdminLayout() {
   return (
     <div>
       <h1 className="text-3xl font-semibold">Back-office</h1>
-      <nav className="mt-6 mb-8 flex gap-6 border-b border-line" aria-label="Back-office">
+      <nav className="mt-6 mb-8 flex gap-5 overflow-x-auto border-b border-line whitespace-nowrap sm:gap-6" aria-label="Back-office">
+        <NavLink to="/admin/planning" className={tabClass}>
+          Planning
+        </NavLink>
         <NavLink to="/admin/prestations" className={tabClass}>
           Prestations
         </NavLink>

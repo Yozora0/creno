@@ -33,7 +33,7 @@ export function HomePage() {
           {services.data?.map((s) => (
             <li key={s.id}>
               <Link to={`/reserver/${s.id}`} className="group block h-full rounded-2xl">
-                <Card className="flex h-full flex-col gap-2 p-5 transition-all group-hover:border-brand group-hover:shadow-md">
+                <Card padding="p-5" className="flex h-full flex-col gap-2 transition-all group-hover:border-brand group-hover:shadow-md">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-lg font-semibold">{s.name}</h3>
                     <span className="font-medium whitespace-nowrap">{formatPrice(s.priceCents)}</span>
