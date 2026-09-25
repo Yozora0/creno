@@ -6,6 +6,7 @@ import { useToast } from '../toast/useToast'
 import { SHOP } from '../lib/shop'
 import { cx } from '../lib/cx'
 import { ButtonLink, Icon } from './ui'
+import { WakeUpNotice } from './WakeUpNotice'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cx(
@@ -137,6 +138,7 @@ export function Layout() {
         )}
       </header>
 
+      <WakeUpNotice />
       <main id="contenu" className="flex-1">
         <Outlet />
       </main>
