@@ -1,5 +1,6 @@
 package com.creno.appointment;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import com.creno.offering.ServiceOffering;
@@ -18,8 +19,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
- * Rendez-vous. La logique de réservation (calcul des créneaux, anti double-réservation)
- * arrive en semaine 2 ; l'entité et la contrainte SQL d'exclusion sont déjà en place.
+ * Rendez-vous d'un client pour une prestation. Le chevauchement de deux RDV actifs
+ * est interdit par la contrainte SQL ex_appointments_no_overlap (cf. V1__init_schema.sql).
  */
 @Entity
 @Table(name = "appointments")
@@ -60,6 +61,15 @@ public class Appointment {
         this.endAt = endAt;
         this.status = AppointmentStatus.BOOKED;
         this.createdAt = Instant.now();
+    }
+
+    /** Un client peut annuler un RDV réservé tant qu'il reste au moins {@code notice} avant son début. */
+    public boolean isCancellableAt(Instant now, Duration notice) {
+        return status == AppointmentStatus.BOOKED && !now.plus(notice).isAfter(startAt);
+    }
+
+    public void cancel() {
+        this.status = AppointmentStatus.CANCELLED;
     }
 
     public Long getId() { return id; }
