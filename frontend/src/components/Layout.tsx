@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { SHOP } from '../lib/shop'
@@ -28,9 +28,36 @@ export function Layout() {
     return () => window.clearTimeout(id)
   }, [location.pathname, location.hash])
 
+  /**
+   * Déconnexion en trois temps pour éviter l'effet « coupure » :
+   * 1. un voile couleur papier recouvre la page en fondu ;
+   * 2. sous le voile, on revient à l'accueil PUIS on efface la session
+   *    (dans cet ordre : une page protégée ne redirige donc pas vers /connexion au passage) ;
+   * 3. le voile se retire en fondu et un message confirme la déconnexion.
+   */
+  const [leaving, setLeaving] = useState<'covering' | 'revealing' | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const timers = useRef<number[]>([])
+  useEffect(() => () => timers.current.forEach(window.clearTimeout), [])
+  const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms))
+
   const onLogout = () => {
-    logout()
-    navigate('/')
+    if (leaving) return
+    const firstName = user?.firstName
+    setLeaving('covering')
+    later(() => {
+      // React Router change de page dans une transition (basse priorité). On efface la session
+      // dans une transition aussi : les deux sont appliquées ensemble. Sinon la page protégée encore
+      // affichée (back-office, mes rendez-vous) verrait la session vide et redirigerait vers /connexion.
+      startTransition(() => {
+        navigate('/')
+        logout()
+      })
+      setLeaving('revealing')
+      setToast(firstName ? `À bientôt, ${firstName} ! Vous êtes déconnecté.` : 'Vous êtes déconnecté.')
+      later(() => setLeaving(null), 450)
+      later(() => setToast(null), 3500)
+    }, 320)
   }
 
   const links = (
@@ -124,6 +151,30 @@ export function Layout() {
       </main>
 
       <Footer />
+
+      {leaving && (
+        <div
+          aria-hidden
+          className={cx(
+            'fixed inset-0 z-50 flex items-center justify-center bg-paper',
+            leaving === 'covering' ? 'animate-fade-in' : 'animate-fade-out',
+          )}
+        >
+          <div className="flex flex-col items-center gap-4 text-muted">
+            <img src="/favicon.svg" alt="" className="size-12" />
+            <p className="font-display text-2xl text-ink italic">À bientôt</p>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div role="status" className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
+          <p className="flex animate-fade-up items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm text-paper shadow-lift">
+            <Icon name="check" className="size-4 text-accent" />
+            {toast}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

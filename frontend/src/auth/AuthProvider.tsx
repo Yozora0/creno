@@ -4,6 +4,9 @@ import { api, tokenStorage } from '../lib/api'
 import type { AuthResponse, User } from '../lib/types'
 import { AuthContext, type RegisterInput } from './context'
 
+/** Données propres à un compte : effacées à chaque changement d'utilisateur. Le reste (catalogue, horaires) est public. */
+const PRIVATE_KEYS = new Set(['appointments', 'admin'])
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [user, setUser] = useState<User | null>(null)
@@ -20,12 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   /**
-   * Changement d'utilisateur : on vide TOUT le cache de requêtes. Sinon des données propres
-   * à l'ancien compte (ex. « Mes rendez-vous ») seraient réaffichées au compte suivant.
+   * Changement d'utilisateur : on efface les données propres à l'ancien compte (ex. « Mes rendez-vous »),
+   * sinon elles seraient réaffichées au compte suivant. Les données publiques restent en cache.
    */
   const switchUser = useCallback(
     (next: User | null) => {
-      queryClient.clear()
+      queryClient.removeQueries({ predicate: (q) => PRIVATE_KEYS.has(String(q.queryKey[0])) })
       setUser(next)
     },
     [queryClient],
