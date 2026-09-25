@@ -14,6 +14,7 @@ import { PlanningPage } from './pages/admin/PlanningPage'
 import { ScheduleAdminPage } from './pages/admin/ScheduleAdminPage'
 import { ServicesAdminPage } from './pages/admin/ServicesAdminPage'
 import { HomePage } from './pages/HomePage'
+import { LegalPage } from './pages/LegalPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: '/connexion', element: <LoginPage /> },
       { path: '/inscription', element: <RegisterPage /> },
       { path: '/reserver/:serviceId', element: <BookingPage /> },
+      { path: '/mentions-legales', element: <LegalPage /> },
       {
         path: '/mes-rendez-vous',
         element: (
