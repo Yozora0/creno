@@ -24,6 +24,10 @@ creno:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   business:
     zone-id: Europe/Paris
+    slot-step: PT15M
+    booking-horizon-days: 60
+    min-booking-notice: PT1H
+    cancellation-notice: PT2H
 
 springdoc:
   swagger-ui:
