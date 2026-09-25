@@ -6,10 +6,11 @@ import { useAdminServices, useDeleteService, useSaveService } from '../../api/se
 import { Alert, Badge, Button, Card, Field, Input, Spinner } from '../../components/ui'
 import { formatDuration, formatPrice } from '../../lib/format'
 import type { ServiceOffering } from '../../lib/types'
+import { SINGLE_LINE_TEXT, SINGLE_LINE_TEXT_MESSAGE } from '../../lib/validation'
 
 const schema = z.object({
-  name: z.string().trim().min(1, 'Nom requis').max(120),
-  description: z.string().trim().max(1000).optional(),
+  name: z.string().trim().min(1, 'Nom requis').max(120).regex(SINGLE_LINE_TEXT, SINGLE_LINE_TEXT_MESSAGE),
+  description: z.string().trim().max(1000).regex(SINGLE_LINE_TEXT, SINGLE_LINE_TEXT_MESSAGE).optional(),
   durationMinutes: z.number('Durée requise').int().min(5, '5 min minimum').max(480, '8 h maximum'),
   priceEuros: z.number('Prix requis').min(0, 'Le prix ne peut pas être négatif'),
   active: z.boolean(),

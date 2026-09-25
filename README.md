@@ -66,6 +66,20 @@ Le code back est organisé **par fonctionnalité** (et non par couche technique)
 - **Horloge injectée** (`Clock`) pour rendre testable toute la logique qui dépend de la date du jour.
 - **Validation en double** : Zod côté front pour le confort, Bean Validation côté back pour la sécurité.
 
+## Sécurité
+
+| Risque | Protection |
+|---|---|
+| Injection SQL | Requêtes JPA paramétrées uniquement (aucune concaténation de SQL) |
+| XSS | React échappe tout texte affiché ; aucun `dangerouslySetInnerHTML` ; Content-Security-Policy stricte (`script-src 'self'`) sur le front |
+| Données malformées | Validation Bean Validation sur chaque requête : longueurs, formats, listes blanches de caractères (`InputPatterns`) ; la même règle côté front (Zod) pour le confort |
+| Injection d'en-têtes / de logs | Aucun caractère de contrôle (retour à la ligne…) accepté dans les champs texte |
+| Élévation de privilèges | Rôle lu dans le JWT signé, jamais dans la requête ; l'inscription crée toujours un client ; routes `/api/admin/**` réservées au rôle ADMIN |
+| Accès aux données d'autrui | Le client est identifié par son token ; le RDV d'un autre renvoie 404 |
+| Mots de passe | Hachés avec BCrypt ; message d'erreur identique que l'email existe ou non |
+
+Les tentatives d'injection sont couvertes par des tests (`InputSecurityTest`).
+
 ## Lancer le projet en local
 
 **Prérequis** : Docker, Java 21 et Node 22. Maven n'a pas besoin d'être installé : le projet embarque le Maven Wrapper (`mvnw`), qui télécharge la bonne version au premier lancement.

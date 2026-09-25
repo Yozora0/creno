@@ -175,6 +175,7 @@ function ClosuresManager() {
         <Field label="Motif" htmlFor="reason">
           <Input
             id="reason"
+            maxLength={255}
             placeholder="Congés d'été"
             value={form.reason}
             onChange={(e) => setForm({ ...form, reason: e.target.value })}

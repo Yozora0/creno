@@ -60,4 +60,5 @@ class AppointmentEmailsTest {
         assertThat(email.subject()).isEqualTo("Votre rendez-vous du mardi 6 octobre 2026 à 9h45 est annulé");
         assertThat(email.body()).contains("désolés").contains("https://creno.example");
     }
+
 }

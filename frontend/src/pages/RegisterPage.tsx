@@ -5,14 +5,15 @@ import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../auth/useAuth'
 import { AuthShell } from '../components/AuthShell'
-import { Alert, Button, Field, Input } from '../components/ui'
+import { Alert, Button, Field, Input, PasswordInput } from '../components/ui'
 import { ApiError } from '../lib/api'
+import { PERSON_NAME, PERSON_NAME_MESSAGE } from '../lib/validation'
 
 // Mêmes règles que le back (RegisterRequest.java) : le front valide pour le confort,
 // le back valide pour la sécurité.
 const schema = z.object({
-  firstName: z.string().trim().min(1, 'Prénom requis').max(100),
-  lastName: z.string().trim().min(1, 'Nom requis').max(100),
+  firstName: z.string().trim().min(1, 'Prénom requis').max(100).regex(PERSON_NAME, PERSON_NAME_MESSAGE),
+  lastName: z.string().trim().min(1, 'Nom requis').max(100).regex(PERSON_NAME, PERSON_NAME_MESSAGE),
   email: z.string().trim().toLowerCase().pipe(z.email('Adresse email invalide')),
   phone: z
     .string()
@@ -87,9 +88,8 @@ export function RegisterPage() {
           <Input id="phone" type="tel" autoComplete="tel" aria-invalid={!!errors.phone} {...register('phone')} />
         </Field>
         <Field label="Mot de passe" htmlFor="password" error={errors.password?.message} hint="8 caractères minimum.">
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="new-password"
             aria-invalid={!!errors.password}
             {...register('password')}
