@@ -1,6 +1,7 @@
-import { startTransition, useEffect, useRef, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useCurtain } from '../curtain/useCurtain'
 import { useToast } from '../toast/useToast'
 import { SHOP } from '../lib/shop'
 import { cx } from '../lib/cx'
@@ -30,34 +31,24 @@ export function Layout() {
     return () => window.clearTimeout(id)
   }, [location.pathname, location.hash])
 
-  /**
-   * Déconnexion en trois temps pour éviter l'effet « coupure » :
-   * 1. un voile couleur papier recouvre la page en fondu ;
-   * 2. sous le voile, on revient à l'accueil PUIS on efface la session
-   *    (dans cet ordre : une page protégée ne redirige donc pas vers /connexion au passage) ;
-   * 3. le voile se retire en fondu et un message confirme la déconnexion.
-   */
-  const [leaving, setLeaving] = useState<'covering' | 'revealing' | null>(null)
-  const timers = useRef<number[]>([])
-  useEffect(() => () => timers.current.forEach(window.clearTimeout), [])
-  const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms))
-
+  const curtain = useCurtain()
   const onLogout = () => {
-    if (leaving) return
     const firstName = user?.firstName
-    setLeaving('covering')
-    later(() => {
-      // React Router change de page dans une transition (basse priorité). On efface la session
-      // dans une transition aussi : les deux sont appliquées ensemble. Sinon la page protégée encore
-      // affichée (back-office, mes rendez-vous) verrait la session vide et redirigerait vers /connexion.
-      startTransition(() => {
-        navigate('/')
-        logout()
-      })
-      setLeaving('revealing')
-      toast(firstName ? `À bientôt, ${firstName} ! Vous êtes déconnecté.` : 'Vous êtes déconnecté.', { duration: 3500 })
-      later(() => setLeaving(null), 450)
-    }, 320)
+    curtain({
+      label: 'À bientôt',
+      action: () => {
+        // React Router change de page dans une transition (basse priorité). On efface la session
+        // dans une transition aussi : les deux sont appliquées ensemble. Sinon la page protégée encore
+        // affichée (back-office, mes rendez-vous) verrait la session vide et redirigerait vers /connexion.
+        startTransition(() => {
+          navigate('/')
+          logout()
+        })
+        toast(firstName ? `À bientôt, ${firstName} ! Vous êtes déconnecté.` : 'Vous êtes déconnecté.', {
+          duration: 3500,
+        })
+      },
+    })
   }
 
   const links = (
@@ -151,21 +142,6 @@ export function Layout() {
       </main>
 
       <Footer />
-
-      {leaving && (
-        <div
-          aria-hidden
-          className={cx(
-            'fixed inset-0 z-50 flex items-center justify-center bg-paper',
-            leaving === 'covering' ? 'animate-fade-in' : 'animate-fade-out',
-          )}
-        >
-          <div className="flex flex-col items-center gap-4 text-muted">
-            <img src="/favicon.svg" alt="" className="size-12" />
-            <p className="font-display text-2xl text-ink italic">À bientôt</p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

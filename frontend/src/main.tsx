@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
 import { AuthProvider } from './auth/AuthProvider'
 import { ToastProvider } from './toast/ToastProvider'
+import { CurtainProvider } from './curtain/CurtainProvider'
 import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
 import './index.css'
@@ -71,7 +72,9 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <RouterProvider router={router} />
+          <CurtainProvider>
+            <RouterProvider router={router} />
+          </CurtainProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>

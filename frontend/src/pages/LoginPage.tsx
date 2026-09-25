@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { startTransition, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../auth/useAuth'
 import { AuthShell } from '../components/AuthShell'
+import { useCurtain } from '../curtain/useCurtain'
 import { Alert, Button, Field, Input, PasswordInput } from '../components/ui'
 
 const schema = z.object({
@@ -18,6 +19,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const curtain = useCurtain()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -35,9 +37,19 @@ export function LoginPage() {
   const onSubmit = async (values: FormValues) => {
     setServerError(null)
     try {
-      const user = await login(values.email, values.password)
+      const session = await login(values.email, values.password)
       const from = (location.state as { from?: string } | null)?.from
-      navigate(from ?? (user.role === 'ADMIN' ? '/admin' : '/'), { replace: true })
+      // Session ouverte et changement de page sous le voile, dans la même transition :
+      // l'en-tête et la page d'arrivée apparaissent ensemble, sans étape intermédiaire.
+      curtain({
+        label: `Bonjour, ${session.user.firstName}`,
+        hold: 350,
+        action: () =>
+          startTransition(() => {
+            session.open()
+            navigate(from ?? (session.user.role === 'ADMIN' ? '/admin' : '/'), { replace: true })
+          }),
+      })
     } catch (e) {
       setServerError((e as Error).message)
     }

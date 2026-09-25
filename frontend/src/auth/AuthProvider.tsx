@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, tokenStorage } from '../lib/api'
 import type { AuthResponse, User } from '../lib/types'
-import { AuthContext, type RegisterInput } from './context'
+import { AuthContext, type PendingSession, type RegisterInput } from './context'
 
 /** Données propres à un compte : effacées à chaque changement d'utilisateur. Le reste (catalogue, horaires) est public. */
 const PRIVATE_KEYS = new Set(['appointments', 'admin'])
@@ -47,11 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [switchUser])
 
   const handleAuth = useCallback(
-    (res: AuthResponse) => {
-      tokenStorage.set(res.token)
-      switchUser(res.user)
-      return res.user
-    },
+    (res: AuthResponse): PendingSession => ({
+      user: res.user,
+      open: () => {
+        tokenStorage.set(res.token)
+        switchUser(res.user)
+      },
+    }),
     [switchUser],
   )
 

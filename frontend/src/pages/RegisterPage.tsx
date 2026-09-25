@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { startTransition, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../auth/useAuth'
 import { AuthShell } from '../components/AuthShell'
+import { useCurtain } from '../curtain/useCurtain'
 import { Alert, Button, Field, Input, PasswordInput } from '../components/ui'
 import { ApiError } from '../lib/api'
 import { PERSON_NAME, PERSON_NAME_MESSAGE } from '../lib/validation'
@@ -28,6 +29,7 @@ type FormValues = z.infer<typeof schema>
 export function RegisterPage() {
   const { register: registerUser } = useAuth()
   const navigate = useNavigate()
+  const curtain = useCurtain()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -40,8 +42,16 @@ export function RegisterPage() {
   const onSubmit = async (values: FormValues) => {
     setServerError(null)
     try {
-      await registerUser(values)
-      navigate('/', { replace: true })
+      const session = await registerUser(values)
+      curtain({
+        label: `Bienvenue, ${session.user.firstName}`,
+        hold: 350,
+        action: () =>
+          startTransition(() => {
+            session.open()
+            navigate('/', { replace: true })
+          }),
+      })
     } catch (e) {
       if (e instanceof ApiError && Object.keys(e.fieldErrors).length > 0) {
         // Les erreurs de validation du back s'affichent sous les bons champs.
