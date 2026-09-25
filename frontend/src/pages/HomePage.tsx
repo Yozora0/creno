@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { useState } from 'react'
+import { useState, type CSSProperties, type PointerEvent } from 'react'
 import { useAdminPlanning, useMyAppointments, useNextSlot } from '../api/appointments'
 import { useClosures, useOpeningHours } from '../api/schedule'
 import { useServices } from '../api/services'
@@ -98,8 +98,12 @@ function Hero({ firstService }: { firstService?: ServiceOffering }) {
 /** Composition graphique : une arche (miroir de salon) et une carte flottante dynamique. */
 function HeroVisual({ firstService }: { firstService?: ServiceOffering }) {
   return (
-    <div className="relative mx-auto w-full max-w-[18rem] animate-fade-up [animation-delay:150ms] sm:max-w-md">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-t-full rounded-b-3xl bg-brand shadow-lift">
+    <div
+      onPointerMove={tiltHandlers.onPointerMove}
+      onPointerLeave={tiltHandlers.onPointerLeave}
+      className="hero-3d relative mx-auto w-full max-w-[18rem] animate-fade-up [animation-delay:150ms] sm:max-w-md"
+    >
+      <div className="hero-arch relative aspect-[4/5] overflow-hidden rounded-t-full rounded-b-3xl bg-brand shadow-lift">
         <svg viewBox="0 0 400 500" className="absolute inset-0 size-full" aria-hidden>
           <defs>
             <linearGradient id="arche" x1="0" y1="0" x2="0" y2="1">
@@ -108,40 +112,73 @@ function HeroVisual({ firstService }: { firstService?: ServiceOffering }) {
             </linearGradient>
           </defs>
           <rect width="400" height="500" fill="url(#arche)" />
-          {/* Arches concentriques, comme des reflets de miroir */}
+          {/* Arches concentriques, comme des reflets de miroir : chaque arche est un plan plus profond */}
           {[0, 1, 2, 3].map((i) => (
-            <path
-              key={i}
-              d={`M${60 + i * 28} 500 V${210 + i * 10} a${140 - i * 28} ${140 - i * 28} 0 0 1 ${280 - i * 56} 0 V500`}
-              fill="none"
-              stroke="#f5efe6"
-              strokeOpacity={0.14 - i * 0.02}
-              strokeWidth="1.5"
-            />
+            <g key={i} className="hero-depth" style={{ '--depth': -(i + 1) * 4 } as CSSProperties}>
+              <path
+                d={`M${60 + i * 28} 500 V${210 + i * 10} a${140 - i * 28} ${140 - i * 28} 0 0 1 ${280 - i * 56} 0 V500`}
+                fill="none"
+                stroke="#f5efe6"
+                strokeOpacity={0.14 - i * 0.02}
+                strokeWidth="1.5"
+              />
+            </g>
           ))}
-          {/* Ciseaux stylisés */}
-          <g
-            transform="translate(200 250) rotate(-35)"
-            stroke="#b8864b"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="round"
-          >
-            <circle cx="-62" cy="-16" r="16" />
-            <circle cx="-62" cy="16" r="16" />
-            <path d="M-48 -8 L70 22 M-48 8 L70 -22" />
+          {/* Ciseaux stylisés : premier plan (bougent le plus) et « coupent » au survol */}
+          <g className="hero-depth" style={{ '--depth': 22 } as CSSProperties}>
+            <g
+              transform="translate(200 250) rotate(-35)"
+              stroke="#b8864b"
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"
+            >
+              <g className="hero-blade hero-blade-a">
+                <circle cx="-62" cy="-16" r="16" />
+                <path d="M-48 -8 L70 22" />
+              </g>
+              <g className="hero-blade hero-blade-b">
+                <circle cx="-62" cy="16" r="16" />
+                <path d="M-48 8 L70 -22" />
+              </g>
+            </g>
           </g>
         </svg>
+        {/* Reflet lumineux qui suit la souris */}
+        <div aria-hidden className="hero-glare pointer-events-none absolute inset-0" />
       </div>
 
       <NextCard firstService={firstService} />
 
-      <div className="absolute top-10 -right-6 flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-xs font-medium shadow-soft sm:-right-8">
+      <div className="hero-chip absolute top-10 -right-6 flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-xs font-medium shadow-soft sm:-right-8">
         <Icon name="mail" className="size-4 text-accent" />
         Confirmation par email
       </div>
     </div>
   )
+}
+
+/**
+ * Effet de perspective au survol : la position de la souris est écrite dans des variables CSS
+ * (--mx / --my entre -0.5 et 0.5) directement sur l'élément, sans re-rendu React. Le CSS (index.css, .hero-3d) en déduit
+ * l'inclinaison de l'arche et le décalage de chaque plan. Désactivé au toucher et si l'utilisateur
+ * a demandé de réduire les animations.
+ */
+const tiltHandlers = {
+  onPointerMove(e: PointerEvent<HTMLElement>) {
+    if (e.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const el = e.currentTarget
+    const r = el.getBoundingClientRect()
+    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width - 0.5).toFixed(3))
+    el.style.setProperty('--my', ((e.clientY - r.top) / r.height - 0.5).toFixed(3))
+    el.dataset.tilting = 'true'
+  },
+  onPointerLeave(e: PointerEvent<HTMLElement>) {
+    const el = e.currentTarget
+    el.style.setProperty('--mx', '0')
+    el.style.setProperty('--my', '0')
+    delete el.dataset.tilting
+  },
 }
 
 /**
@@ -230,7 +267,7 @@ function FloatingCard({
   empty?: string
 }) {
   return (
-    <div className="absolute -bottom-8 -left-6 w-72 rounded-2xl border border-line bg-surface p-4 shadow-lift sm:-left-10">
+    <div className="hero-card absolute -bottom-8 -left-6 w-72 rounded-2xl border border-line bg-surface p-4 shadow-lift sm:-left-10">
       <p className="flex items-center gap-2 text-xs font-medium text-muted">
         <span className="relative flex size-2">
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand/60" />

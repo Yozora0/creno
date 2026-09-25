@@ -85,3 +85,93 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Hero : effet de perspective au survol (piloté par --mx / --my, cf. useTilt) ---------- */
+@layer components {
+  .hero-3d {
+    --mx: 0;
+    --my: 0;
+    --ease-tilt: cubic-bezier(0.2, 0.7, 0.2, 1);
+    perspective: 1100px;
+  }
+
+  /* L'arche pivote vers la souris */
+  .hero-arch {
+    transform: rotateX(calc(var(--my) * -12deg)) rotateY(calc(var(--mx) * 14deg));
+    transition:
+      transform 0.7s var(--ease-tilt),
+      box-shadow 0.7s var(--ease-tilt);
+    will-change: transform;
+  }
+  .hero-3d[data-tilting] .hero-arch {
+    transition-duration: 0.12s, 0.7s;
+    box-shadow:
+      calc(var(--mx) * -30px) calc(20px + var(--my) * -20px) 50px -18px rgb(27 26 23 / 0.45),
+      var(--shadow-lift);
+  }
+
+  /* Plans de l'arche : plus --depth est grand, plus le plan se décale (effet de parallaxe) */
+  .hero-depth {
+    transform: translate(calc(var(--mx) * var(--depth) * 1px), calc(var(--my) * var(--depth) * 1px));
+    transition: transform 0.7s var(--ease-tilt);
+  }
+  .hero-3d[data-tilting] .hero-depth {
+    transition-duration: 0.12s;
+  }
+
+  /* Reflet */
+  .hero-glare {
+    background: radial-gradient(
+      circle at calc((var(--mx) + 0.5) * 100%) calc((var(--my) + 0.5) * 100%),
+      rgb(255 255 255 / 0.16),
+      transparent 55%
+    );
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .hero-3d[data-tilting] .hero-glare {
+    opacity: 1;
+  }
+
+  /* Éléments flottants : ils partent dans le sens opposé, comme s'ils étaient devant l'arche */
+  .hero-card,
+  .hero-chip {
+    transition: translate 0.7s var(--ease-tilt);
+  }
+  .hero-card {
+    translate: calc(var(--mx) * -26px) calc(var(--my) * -18px);
+  }
+  .hero-chip {
+    translate: calc(var(--mx) * 20px) calc(var(--my) * 14px);
+  }
+  .hero-3d[data-tilting] :is(.hero-card, .hero-chip) {
+    transition-duration: 0.15s;
+  }
+
+  /* Ciseaux : les lames se referment deux fois au survol (pivot au croisement des lames) */
+  .hero-blade {
+    transform-box: fill-box;
+  }
+  .hero-blade-a {
+    transform-origin: 41.6% 59.3%;
+  }
+  .hero-blade-b {
+    transform-origin: 41.6% 40.7%;
+  }
+  .hero-3d[data-tilting] .hero-blade-a {
+    animation: snip-a 0.45s ease-in-out 2;
+  }
+  .hero-3d[data-tilting] .hero-blade-b {
+    animation: snip-b 0.45s ease-in-out 2;
+  }
+  @keyframes snip-a {
+    50% {
+      transform: rotate(11deg);
+    }
+  }
+  @keyframes snip-b {
+    50% {
+      transform: rotate(-11deg);
+    }
+  }
+}
