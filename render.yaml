@@ -1,0 +1,45 @@
+# Blueprint Render : API Spring Boot (Docker) + PostgreSQL managé.
+# Render → New → Blueprint → sélectionner ce dépôt. Les valeurs "sync: false" sont demandées à la création.
+services:
+  - type: web
+    name: creno-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: demo # crée le salon et les comptes de démonstration au premier démarrage
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_HOST
+        fromDatabase:
+          name: creno-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: creno-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: creno-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: creno-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: creno-db
+          property: password
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false # ex. https://creno.vercel.app
+      - key: FRONTEND_URL
+        sync: false # même valeur : sert aux liens dans les emails
+
+databases:
+  - name: creno-db
+    plan: free
+    databaseName: creno
+    user: creno

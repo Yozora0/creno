@@ -12,5 +12,7 @@ WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /app/target/creno-backend.jar app.jar
 USER app
+# Adapte le tas Java à la mémoire du conteneur (512 Mo sur les offres gratuites)
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
