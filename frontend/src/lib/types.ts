@@ -26,14 +26,7 @@ export interface ServiceOffering {
 
 export type ServiceOfferingInput = Omit<ServiceOffering, 'id'>
 
-export type DayOfWeek =
-  | 'MONDAY'
-  | 'TUESDAY'
-  | 'WEDNESDAY'
-  | 'THURSDAY'
-  | 'FRIDAY'
-  | 'SATURDAY'
-  | 'SUNDAY'
+export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY'
 
 export interface OpeningHour {
   dayOfWeek: DayOfWeek

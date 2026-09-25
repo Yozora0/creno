@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
+import { addDays } from '../lib/format'
 import type { AdminAppointment, Appointment, AppointmentStatus, Slot } from '../lib/types'
 
 const keys = {
@@ -69,5 +70,25 @@ export function useChangeAppointmentStatus() {
         qc.invalidateQueries({ queryKey: ['admin', 'appointments'] }),
         qc.invalidateQueries({ queryKey: ['availability'] }),
       ]),
+  })
+}
+
+/**
+ * Premier créneau libre d'une prestation dans les 14 prochains jours.
+ * Les jours sont interrogés un par un et on s'arrête au premier créneau trouvé.
+ */
+export function useNextSlot(serviceId: number | undefined, fromDate: string) {
+  return useQuery({
+    queryKey: ['next-slot', serviceId, fromDate],
+    enabled: serviceId !== undefined,
+    staleTime: 60_000,
+    queryFn: async () => {
+      for (let i = 0; i < 14; i++) {
+        const date = addDays(fromDate, i)
+        const slots = await api.get<Slot[]>(`/api/services/${serviceId}/availability?date=${date}`)
+        if (slots.length > 0) return { date, slot: slots[0] }
+      }
+      return null
+    },
   })
 }

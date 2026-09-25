@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../auth/useAuth'
-import { Alert, Button, Card, Field, Input } from '../components/ui'
+import { AuthShell } from '../components/AuthShell'
+import { Alert, Button, Field, Input } from '../components/ui'
 
 const schema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email('Adresse email invalide')),
@@ -22,8 +23,14 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
+
+  const fillDemo = (email: string, password: string) => {
+    setValue('email', email, { shouldValidate: true })
+    setValue('password', password, { shouldValidate: true })
+  }
 
   const onSubmit = async (values: FormValues) => {
     setServerError(null)
@@ -37,41 +44,50 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <h1 className="mb-6 text-3xl font-semibold">Connexion</h1>
-      <Card>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          {serverError && <Alert>{serverError}</Alert>}
-          <Field label="Email" htmlFor="email" error={errors.email?.message}>
-            <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
-          </Field>
-          <Field label="Mot de passe" htmlFor="password" error={errors.password?.message}>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={!!errors.password}
-              {...register('password')}
-            />
-          </Field>
-          <Button type="submit" loading={isSubmitting} className="w-full">
-            Se connecter
-          </Button>
-        </form>
-      </Card>
+    <AuthShell title="Connexion" subtitle="Accédez à vos rendez-vous et réservez en quelques secondes.">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        {serverError && <Alert>{serverError}</Alert>}
+        <Field label="Email" htmlFor="email" error={errors.email?.message}>
+          <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
+        </Field>
+        <Field label="Mot de passe" htmlFor="password" error={errors.password?.message}>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={!!errors.password}
+            {...register('password')}
+          />
+        </Field>
+        <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
+          Se connecter
+        </Button>
+      </form>
 
-      <p className="mt-4 text-center text-sm text-muted">
+      <p className="mt-6 text-center text-sm text-muted">
         Pas encore de compte ?{' '}
         <Link to="/inscription" className="font-medium text-brand hover:underline">
           Créer un compte
         </Link>
       </p>
 
-      <div className="mt-6 rounded-lg border border-dashed border-line p-4 text-xs text-muted">
-        <p className="font-medium text-ink">Comptes de démonstration</p>
-        <p className="mt-1">Commerçant : admin@creno.dev / Admin123!</p>
-        <p>Client : client@creno.dev / Client123!</p>
+      <div className="mt-8 rounded-2xl border border-dashed border-accent/50 bg-accent-soft/40 p-4">
+        <p className="text-sm font-medium">Comptes de démonstration</p>
+        <p className="mt-1 text-xs text-muted">Un clic remplit le formulaire.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => fillDemo('client@creno.dev', 'Client123!')}
+          >
+            Client · Léa
+          </Button>
+          <Button type="button" variant="secondary" size="sm" onClick={() => fillDemo('admin@creno.dev', 'Admin123!')}>
+            Commerçant · Camille
+          </Button>
+        </div>
       </div>
-    </div>
+    </AuthShell>
   )
 }

@@ -87,3 +87,11 @@ export const formatInstantTime = (iso: string) => formatHour(instantTime.format(
 
 /** "09:45" -> "9h45" */
 export const formatHour = (hhmm: string) => hhmm.replace(/^0/, '').replace(':', 'h')
+
+/** "Aujourd'hui", "Demain" ou "mardi 29 septembre" */
+export function relativeDay(isoDate: string) {
+  const today = todayInShop()
+  if (isoDate === today) return "Aujourd'hui"
+  if (isoDate === addDays(today, 1)) return 'Demain'
+  return formatDayLong(isoDate)
+}

@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../auth/useAuth'
-import { Alert, Button, Card, Field, Input } from '../components/ui'
+import { AuthShell } from '../components/AuthShell'
+import { Alert, Button, Field, Input } from '../components/ui'
 import { ApiError } from '../lib/api'
 
 // Mêmes règles que le back (RegisterRequest.java) : le front valide pour le confort,
@@ -53,45 +54,63 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <h1 className="mb-6 text-3xl font-semibold">Créer un compte</h1>
-      <Card>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          {serverError && <Alert>{serverError}</Alert>}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Prénom" htmlFor="firstName" error={errors.firstName?.message}>
-              <Input id="firstName" autoComplete="given-name" aria-invalid={!!errors.firstName} {...register('firstName')} />
-            </Field>
-            <Field label="Nom" htmlFor="lastName" error={errors.lastName?.message}>
-              <Input id="lastName" autoComplete="family-name" aria-invalid={!!errors.lastName} {...register('lastName')} />
-            </Field>
-          </div>
-          <Field label="Email" htmlFor="email" error={errors.email?.message}>
-            <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
-          </Field>
-          <Field label="Téléphone" htmlFor="phone" error={errors.phone?.message} hint="Facultatif, pour être prévenu en cas d'imprévu.">
-            <Input id="phone" type="tel" autoComplete="tel" aria-invalid={!!errors.phone} {...register('phone')} />
-          </Field>
-          <Field label="Mot de passe" htmlFor="password" error={errors.password?.message} hint="8 caractères minimum.">
+    <AuthShell title="Créer un compte" subtitle="Quelques informations pour gérer vos rendez-vous en ligne.">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        {serverError && <Alert>{serverError}</Alert>}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Prénom" htmlFor="firstName" error={errors.firstName?.message}>
             <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              aria-invalid={!!errors.password}
-              {...register('password')}
+              id="firstName"
+              autoComplete="given-name"
+              aria-invalid={!!errors.firstName}
+              {...register('firstName')}
             />
           </Field>
-          <Button type="submit" loading={isSubmitting} className="w-full">
-            Créer mon compte
-          </Button>
-        </form>
-      </Card>
-      <p className="mt-4 text-center text-sm text-muted">
+          <Field label="Nom" htmlFor="lastName" error={errors.lastName?.message}>
+            <Input
+              id="lastName"
+              autoComplete="family-name"
+              aria-invalid={!!errors.lastName}
+              {...register('lastName')}
+            />
+          </Field>
+        </div>
+        <Field label="Email" htmlFor="email" error={errors.email?.message}>
+          <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
+        </Field>
+        <Field
+          label="Téléphone"
+          htmlFor="phone"
+          error={errors.phone?.message}
+          hint="Facultatif, pour être prévenu en cas d'imprévu."
+        >
+          <Input id="phone" type="tel" autoComplete="tel" aria-invalid={!!errors.phone} {...register('phone')} />
+        </Field>
+        <Field label="Mot de passe" htmlFor="password" error={errors.password?.message} hint="8 caractères minimum.">
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            aria-invalid={!!errors.password}
+            {...register('password')}
+          />
+        </Field>
+        <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
+          Créer mon compte
+        </Button>
+        <p className="text-xs leading-relaxed text-muted">
+          Vos données servent uniquement à gérer vos rendez-vous.{' '}
+          <Link to="/mentions-legales#donnees" className="underline hover:text-ink">
+            En savoir plus
+          </Link>
+        </p>
+      </form>
+      <p className="mt-6 text-center text-sm text-muted">
         Déjà inscrit ?{' '}
         <Link to="/connexion" className="font-medium text-brand hover:underline">
           Se connecter
         </Link>
       </p>
-    </div>
+    </AuthShell>
   )
 }

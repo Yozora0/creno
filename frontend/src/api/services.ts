@@ -32,10 +32,7 @@ export function useAdminServices() {
 function useInvalidateServices() {
   const qc = useQueryClient()
   return () =>
-    Promise.all([
-      qc.invalidateQueries({ queryKey: keys.public }),
-      qc.invalidateQueries({ queryKey: keys.admin }),
-    ])
+    Promise.all([qc.invalidateQueries({ queryKey: keys.public }), qc.invalidateQueries({ queryKey: keys.admin })])
 }
 
 export function useSaveService() {

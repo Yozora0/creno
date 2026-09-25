@@ -2,7 +2,15 @@ import { useState } from 'react'
 import { useAdminPlanning, useChangeAppointmentStatus } from '../../api/appointments'
 import { useOpeningHours } from '../../api/schedule'
 import { Alert, Badge, Button, Card, Spinner } from '../../components/ui'
-import { addDays, dayOfWeek, formatDayLong, formatInstantTime, formatPrice, SHOP_TIME_ZONE, todayInShop } from '../../lib/format'
+import {
+  addDays,
+  dayOfWeek,
+  formatDayLong,
+  formatInstantTime,
+  formatPrice,
+  SHOP_TIME_ZONE,
+  todayInShop,
+} from '../../lib/format'
 import type { AdminAppointment, AppointmentStatus } from '../../lib/types'
 
 const STATUS: Record<AppointmentStatus, { label: string; tone: 'brand' | 'neutral' | 'danger' }> = {
@@ -16,7 +24,9 @@ const shopDay = new Intl.DateTimeFormat('en-CA', { timeZone: SHOP_TIME_ZONE })
 
 /** Lundi de la semaine contenant la date donnée. */
 function mondayOf(isoDate: string) {
-  const index = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].indexOf(dayOfWeek(isoDate))
+  const index = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].indexOf(
+    dayOfWeek(isoDate),
+  )
   return addDays(isoDate, -index)
 }
 
@@ -49,10 +59,18 @@ export function PlanningPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button variant="secondary" aria-label="Semaine précédente" onClick={() => setWeekStart(addDays(weekStart, -7))}>
+          <Button
+            variant="secondary"
+            aria-label="Semaine précédente"
+            onClick={() => setWeekStart(addDays(weekStart, -7))}
+          >
             ←
           </Button>
-          <Button variant="secondary" onClick={() => setWeekStart(mondayOf(today))} disabled={weekStart === mondayOf(today)}>
+          <Button
+            variant="secondary"
+            onClick={() => setWeekStart(mondayOf(today))}
+            disabled={weekStart === mondayOf(today)}
+          >
             Cette semaine
           </Button>
           <Button variant="secondary" aria-label="Semaine suivante" onClick={() => setWeekStart(addDays(weekStart, 7))}>
@@ -68,11 +86,19 @@ export function PlanningPage() {
         <Stat label="Rendez-vous" value={String(active.length)} />
         <Stat label="Chiffre d'affaires prévu" value={formatPrice(revenue)} />
         <Stat label="Déjà passés" value={String(done.length)} />
-        <Stat label="Absences" value={done.length ? `${noShows} (${Math.round((noShows / done.length) * 100)} %)` : '0'} />
+        <Stat
+          label="Absences"
+          value={done.length ? `${noShows} (${Math.round((noShows / done.length) * 100)} %)` : '0'}
+        />
       </dl>
 
       <label className="flex items-center gap-2 text-sm text-muted">
-        <input type="checkbox" className="size-4 accent-brand" checked={showCancelled} onChange={(e) => setShowCancelled(e.target.checked)} />
+        <input
+          type="checkbox"
+          className="size-4 accent-brand"
+          checked={showCancelled}
+          onChange={(e) => setShowCancelled(e.target.checked)}
+        />
         Afficher les rendez-vous annulés
       </label>
 
@@ -127,7 +153,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface px-4 py-3">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-1 text-xl font-semibold">{value}</dd>
+      <dd className="mt-1 font-display text-3xl">{value}</dd>
     </div>
   )
 }

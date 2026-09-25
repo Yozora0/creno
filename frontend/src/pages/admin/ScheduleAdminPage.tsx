@@ -53,7 +53,7 @@ function WeekEditor({ initial }: { initial: OpeningHour[] }) {
     <Card>
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Horaires d'ouverture</h2>
+          <h2 className="text-2xl font-medium">Horaires d'ouverture</h2>
           <p className="text-sm text-muted">Plusieurs plages par jour possibles (ex. pause déjeuner).</p>
         </div>
         <Button onClick={onSave} loading={save.isPending}>
@@ -79,7 +79,10 @@ function WeekEditor({ initial }: { initial: OpeningHour[] }) {
                       aria-label={`${day.label} ouverture`}
                       value={slot.opensAt}
                       onChange={(e) =>
-                        updateDay(day.value, slots.map((s) => (s.id === slot.id ? { ...s, opensAt: e.target.value } : s)))
+                        updateDay(
+                          day.value,
+                          slots.map((s) => (s.id === slot.id ? { ...s, opensAt: e.target.value } : s)),
+                        )
                       }
                       className="w-32"
                     />
@@ -89,14 +92,22 @@ function WeekEditor({ initial }: { initial: OpeningHour[] }) {
                       aria-label={`${day.label} fermeture`}
                       value={slot.closesAt}
                       onChange={(e) =>
-                        updateDay(day.value, slots.map((s) => (s.id === slot.id ? { ...s, closesAt: e.target.value } : s)))
+                        updateDay(
+                          day.value,
+                          slots.map((s) => (s.id === slot.id ? { ...s, closesAt: e.target.value } : s)),
+                        )
                       }
                       className="w-32"
                     />
                     <Button
                       variant="danger"
                       aria-label={`Retirer la plage du ${day.label}`}
-                      onClick={() => updateDay(day.value, slots.filter((s) => s.id !== slot.id))}
+                      onClick={() =>
+                        updateDay(
+                          day.value,
+                          slots.filter((s) => s.id !== slot.id),
+                        )
+                      }
                     >
                       ✕
                     </Button>
@@ -136,7 +147,7 @@ function ClosuresManager() {
 
   return (
     <Card>
-      <h2 className="text-xl font-semibold">Fermetures exceptionnelles</h2>
+      <h2 className="text-2xl font-medium">Fermetures exceptionnelles</h2>
       <p className="mb-4 text-sm text-muted">Congés, jours fériés… Aucun créneau ne sera proposé ces jours-là.</p>
 
       <form onSubmit={onSubmit} className="space-y-3">
@@ -179,7 +190,9 @@ function ClosuresManager() {
         {data?.map((c) => (
           <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg bg-paper px-3 py-2 text-sm">
             <span>
-              {c.startDate === c.endDate ? formatDate(c.startDate) : `${formatDate(c.startDate)} → ${formatDate(c.endDate)}`}
+              {c.startDate === c.endDate
+                ? formatDate(c.startDate)
+                : `${formatDate(c.startDate)} → ${formatDate(c.endDate)}`}
               {c.reason && <span className="block text-xs text-muted">{c.reason}</span>}
             </span>
             <Button variant="danger" aria-label="Supprimer la fermeture" onClick={() => remove.mutate(c.id)}>

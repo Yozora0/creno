@@ -47,11 +47,7 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
 
   if (!response.ok) {
     const problem = await response.json().catch(() => null)
-    throw new ApiError(
-      response.status,
-      problem?.detail ?? `Erreur ${response.status}`,
-      problem?.errors ?? {},
-    )
+    throw new ApiError(response.status, problem?.detail ?? `Erreur ${response.status}`, problem?.errors ?? {})
   }
 
   if (response.status === 204) return undefined as T

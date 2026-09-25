@@ -1,30 +1,73 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* Polices auto-hébergées (pas d'appel à Google Fonts : meilleur pour la vie privée et le RGPD) */
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/fraunces/opsz-italic.css';
+@import '@fontsource-variable/inter';
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
 
-  --color-paper: #f6f1e9;
-  --color-surface: #fffdf9;
-  --color-ink: #1c1b19;
-  --color-muted: #6b665e;
-  --color-line: #e4ddd1;
+  --color-paper: #f5efe6;
+  --color-surface: #fffcf7;
+  --color-ink: #1b1a17;
+  --color-muted: #6d675e;
+  --color-line: #e6ddcf;
   --color-brand: #1f4d45;
-  --color-brand-hover: #173a34;
-  --color-brand-soft: #dfeae6;
-  --color-accent: #e8a45c;
+  --color-brand-hover: #163a34;
+  --color-brand-deep: #10302a;
+  --color-brand-soft: #e1ebe7;
+  --color-accent: #b8864b;
+  --color-accent-soft: #f3e7d6;
   --color-danger: #b3261e;
   --color-danger-soft: #fbe9e7;
+
+  --shadow-soft: 0 1px 2px rgb(27 26 23 / 0.04), 0 8px 24px -12px rgb(27 26 23 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(27 26 23 / 0.05), 0 18px 40px -18px rgb(27 26 23 / 0.28);
+
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-paper font-sans text-ink antialiased;
   }
-  h1, h2, h3 {
-    @apply font-display tracking-tight;
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight text-balance;
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-brand;
+  }
+  ::selection {
+    @apply bg-accent-soft text-ink;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

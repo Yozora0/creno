@@ -130,7 +130,7 @@ function ServiceForm({ initial, onDone }: { initial?: ServiceOffering; onDone: (
 
   return (
     <Card>
-      <h2 className="mb-4 text-xl font-semibold">{initial ? 'Modifier la prestation' : 'Nouvelle prestation'}</h2>
+      <h2 className="mb-4 text-2xl font-medium">{initial ? 'Modifier la prestation' : 'Nouvelle prestation'}</h2>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {save.isError && <Alert>{save.error.message}</Alert>}
         <Field label="Nom" htmlFor="name" error={errors.name?.message}>

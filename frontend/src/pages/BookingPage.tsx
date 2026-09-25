@@ -4,8 +4,17 @@ import { useAvailability, useBookAppointment } from '../api/appointments'
 import { useClosures, useOpeningHours } from '../api/schedule'
 import { useService } from '../api/services'
 import { useAuth } from '../auth/useAuth'
-import { Alert, Badge, Button, Card, Spinner } from '../components/ui'
-import { addDays, dayChip, dayOfWeek, formatDayLong, formatDuration, formatHour, formatPrice, todayInShop } from '../lib/format'
+import { Alert, Badge, Button, Card, Page, PageHeader, Spinner } from '../components/ui'
+import {
+  addDays,
+  dayChip,
+  dayOfWeek,
+  formatDayLong,
+  formatDuration,
+  formatHour,
+  formatPrice,
+  todayInShop,
+} from '../lib/format'
 import type { Slot } from '../lib/types'
 
 const DAYS_SHOWN = 14
@@ -38,40 +47,48 @@ export function BookingPage() {
   const select = (date: string, start?: string) =>
     setParams(start ? { date, start } : { date }, { replace: true, preventScrollReset: true })
 
-  if (service.isPending || openingHours.isPending) return <Spinner />
+  if (service.isPending || openingHours.isPending)
+    return (
+      <Page>
+        <Spinner />
+      </Page>
+    )
   if (service.isError) {
     return (
-      <div className="space-y-4">
+      <Page narrow className="space-y-4">
         <Alert>Cette prestation n'existe pas ou n'est plus proposée.</Alert>
-        <Link to="/" className="text-sm font-medium text-brand hover:underline">
+        <Link to="/#prestations" className="text-sm font-medium text-brand hover:underline">
           ← Voir les prestations
         </Link>
-      </div>
+      </Page>
     )
   }
 
   return (
-    <div>
-      <Link to="/" className="text-sm text-muted hover:text-ink">
+    <Page>
+      <Link to="/#prestations" className="text-sm text-muted hover:text-ink">
         ← Toutes les prestations
       </Link>
-      <div className="mt-3 mb-8 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold sm:text-4xl">{service.data.name}</h1>
-          {service.data.description && <p className="mt-1 text-muted">{service.data.description}</p>}
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge>{formatDuration(service.data.durationMinutes)}</Badge>
-          <span className="text-lg font-medium">{formatPrice(service.data.priceCents)}</span>
-        </div>
+      <div className="mt-4">
+        <PageHeader
+          eyebrow="Réservation"
+          title={service.data.name}
+          description={service.data.description}
+          actions={
+            <div className="flex items-center gap-3">
+              <Badge tone="accent">{formatDuration(service.data.durationMinutes)}</Badge>
+              <span className="font-display text-3xl">{formatPrice(service.data.priceCents)}</span>
+            </div>
+          }
+        />
       </div>
 
       <div className="grid items-start gap-8 lg:grid-cols-[1fr_320px]">
         {/* min-w-0 : sans ça, la bande de jours défilante élargit la colonne de la grille sur mobile */}
         <div className="min-w-0 space-y-8">
           <section aria-labelledby="day-title">
-            <h2 id="day-title" className="mb-3 text-xl font-semibold">
-              1. Choisissez un jour
+            <h2 id="day-title" className="mb-4 flex items-center gap-3 text-2xl font-medium">
+              <StepNumber n={1} /> Choisissez un jour
             </h2>
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:px-0">
               {days.map(({ date, open }) => {
@@ -85,16 +102,16 @@ export function BookingPage() {
                     aria-pressed={active}
                     aria-label={`${formatDayLong(date)}${open ? '' : ' (fermé)'}`}
                     onClick={() => select(date)}
-                    className={`flex w-16 shrink-0 flex-col items-center rounded-xl border py-2.5 transition-colors ${
+                    className={`flex w-[4.25rem] shrink-0 flex-col items-center rounded-2xl border py-3 transition-all ${
                       active
-                        ? 'border-brand bg-brand text-white'
+                        ? 'border-brand bg-brand text-white shadow-lift'
                         : open
-                          ? 'border-line bg-surface hover:border-brand'
-                          : 'cursor-not-allowed border-transparent bg-transparent text-muted/50 line-through'
+                          ? 'border-line bg-surface shadow-soft hover:-translate-y-0.5 hover:border-brand'
+                          : 'cursor-not-allowed border-transparent bg-transparent text-muted/40 line-through'
                     }`}
                   >
                     <span className="text-xs capitalize">{chip.weekday}</span>
-                    <span className="text-lg font-semibold">{chip.day}</span>
+                    <span className="font-display text-2xl leading-tight">{chip.day}</span>
                     <span className="text-xs">{chip.month}</span>
                   </button>
                 )
@@ -121,7 +138,7 @@ export function BookingPage() {
           onConflict={() => selectedDate && select(selectedDate)}
         />
       </div>
-    </div>
+    </Page>
   )
 }
 
@@ -145,20 +162,25 @@ function SlotPicker({
 
   return (
     <section aria-labelledby="slot-title">
-      <h2 id="slot-title" className="mb-3 text-xl font-semibold">
-        2. Choisissez un horaire <span className="text-base font-normal text-muted">· {formatDayLong(date)}</span>
+      <h2 id="slot-title" className="mb-4 flex flex-wrap items-center gap-3 text-2xl font-medium">
+        <StepNumber n={2} /> Choisissez un horaire
+        <span className="font-sans text-sm font-normal text-muted first-letter:uppercase">{formatDayLong(date)}</span>
       </h2>
       {isPending && <Spinner label="Recherche des créneaux…" />}
       {isError && <Alert>{error.message}</Alert>}
       {data?.length === 0 && (
-        <Card className="text-center text-sm text-muted">Plus aucun créneau libre ce jour-là. Essayez un autre jour.</Card>
+        <Card className="text-center text-sm text-muted">
+          Plus aucun créneau libre ce jour-là. Essayez un autre jour.
+        </Card>
       )}
       <div className={`space-y-5 transition-opacity ${isPlaceholderData ? 'opacity-50' : ''}`}>
         {groups
           .filter((g) => g.slots.length > 0)
           .map((group) => (
             <div key={group.label}>
-              <h3 className="mb-2 font-sans text-sm font-medium text-muted">{group.label}</h3>
+              <h3 className="mb-2.5 font-sans text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+                {group.label}
+              </h3>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                 {group.slots.map((slot) => {
                   const active = slot.startAt === selectedStart
@@ -168,8 +190,10 @@ function SlotPicker({
                       type="button"
                       aria-pressed={active}
                       onClick={() => onSelect(slot.startAt)}
-                      className={`rounded-lg border py-2 text-sm font-medium transition-colors ${
-                        active ? 'border-brand bg-brand text-white' : 'border-line bg-surface hover:border-brand'
+                      className={`rounded-full border py-2.5 text-sm font-medium tabular-nums transition-all ${
+                        active
+                          ? 'border-brand bg-brand text-white shadow-soft'
+                          : 'border-line bg-surface hover:border-brand hover:text-brand'
                       }`}
                     >
                       {formatHour(slot.time)}
@@ -218,35 +242,36 @@ function Summary({
   }
 
   return (
-    <Card className="lg:sticky lg:top-6">
-      <h2 className="mb-4 text-xl font-semibold">Récapitulatif</h2>
-      <dl className="space-y-2 text-sm">
+    <Card className="lg:sticky lg:top-24">
+      <h2 className="mb-5 text-2xl font-medium">Récapitulatif</h2>
+      <dl className="space-y-3 text-sm">
         <div className="flex justify-between gap-4">
           <dt className="text-muted">Prestation</dt>
           <dd className="text-right font-medium">{serviceName}</dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-muted">Date</dt>
-          <dd className="text-right font-medium">{date ? formatDayLong(date) : '—'}</dd>
+          <dd className="text-right font-medium first-letter:uppercase">{date ? formatDayLong(date) : '—'}</dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-muted">Heure</dt>
           <dd className="text-right font-medium">{slot ? formatHour(slot.time) : '—'}</dd>
         </div>
-        <div className="flex justify-between gap-4 border-t border-line pt-2">
+        <div className="flex items-baseline justify-between gap-4 border-t border-line pt-4">
           <dt className="text-muted">À régler sur place</dt>
-          <dd className="text-right font-medium">{formatPrice(priceCents)}</dd>
+          <dd className="font-display text-2xl">{formatPrice(priceCents)}</dd>
         </div>
       </dl>
 
       <div className="mt-5 space-y-3">
         {book.isError && <Alert>{book.error.message}</Alert>}
         {user ? (
-          <Button className="w-full" disabled={!slot} loading={book.isPending} onClick={confirm}>
+          <Button size="lg" className="w-full" disabled={!slot} loading={book.isPending} onClick={confirm}>
             Confirmer le rendez-vous
           </Button>
         ) : (
           <Button
+            size="lg"
             className="w-full"
             disabled={!slot}
             onClick={() => navigate('/connexion', { state: { from: location.pathname + location.search } })}
@@ -257,5 +282,13 @@ function Summary({
         {!slot && <p className="text-center text-xs text-muted">Sélectionnez un horaire pour continuer.</p>}
       </div>
     </Card>
+  )
+}
+
+function StepNumber({ n }: { n: number }) {
+  return (
+    <span className="flex size-8 items-center justify-center rounded-full bg-accent-soft font-sans text-sm font-semibold text-accent">
+      {n}
+    </span>
   )
 }
