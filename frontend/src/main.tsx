@@ -7,6 +7,8 @@ import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
 import './index.css'
 import { ApiError } from './lib/api'
+import { BookingPage } from './pages/BookingPage'
+import { MyAppointmentsPage } from './pages/MyAppointmentsPage'
 import { AdminLayout } from './pages/admin/AdminLayout'
 import { ScheduleAdminPage } from './pages/admin/ScheduleAdminPage'
 import { ServicesAdminPage } from './pages/admin/ServicesAdminPage'
@@ -32,6 +34,15 @@ const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/connexion', element: <LoginPage /> },
       { path: '/inscription', element: <RegisterPage /> },
+      { path: '/reserver/:serviceId', element: <BookingPage /> },
+      {
+        path: '/mes-rendez-vous',
+        element: (
+          <RequireAuth>
+            <MyAppointmentsPage />
+          </RequireAuth>
+        ),
+      },
       {
         path: '/admin',
         element: (

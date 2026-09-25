@@ -1,0 +1,50 @@
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { api } from '../lib/api'
+import type { Appointment, Slot } from '../lib/types'
+
+const keys = {
+  availability: (serviceId: number, date: string) => ['availability', serviceId, date] as const,
+  mine: ['appointments', 'me'] as const,
+}
+
+export function useAvailability(serviceId: number, date: string | null) {
+  return useQuery({
+    queryKey: keys.availability(serviceId, date ?? ''),
+    queryFn: () => api.get<Slot[]>(`/api/services/${serviceId}/availability?date=${date}`),
+    enabled: date !== null,
+    staleTime: 0, // les créneaux bougent vite : toujours rafraîchir
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useBookAppointment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { serviceId: number; startAt: string }) => api.post<Appointment>('/api/appointments', input),
+    // Succès ou conflit, les disponibilités ont changé.
+    onSettled: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ['availability'] }),
+        qc.invalidateQueries({ queryKey: keys.mine }),
+      ]),
+  })
+}
+
+export function useMyAppointments() {
+  return useQuery({
+    queryKey: keys.mine,
+    queryFn: () => api.get<Appointment[]>('/api/appointments/me'),
+  })
+}
+
+export function useCancelAppointment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.post<Appointment>(`/api/appointments/${id}/cancel`),
+    onSettled: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: keys.mine }),
+        qc.invalidateQueries({ queryKey: ['availability'] }),
+      ]),
+  })
+}

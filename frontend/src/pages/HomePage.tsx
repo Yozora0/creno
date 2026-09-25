@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useClosures, useOpeningHours } from '../api/schedule'
 import { useServices } from '../api/services'
 import { useAuth } from '../auth/useAuth'
@@ -31,18 +32,21 @@ export function HomePage() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {services.data?.map((s) => (
             <li key={s.id}>
-              <Card className="flex h-full flex-col gap-2 p-5 transition-shadow hover:shadow-md">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-lg font-semibold">{s.name}</h3>
-                  <span className="font-medium whitespace-nowrap">{formatPrice(s.priceCents)}</span>
-                </div>
-                {s.description && <p className="text-sm text-muted">{s.description}</p>}
-                <div className="mt-auto flex items-center justify-between pt-3">
-                  <Badge>{formatDuration(s.durationMinutes)}</Badge>
-                  {/* La réservation arrive en semaine 2 */}
-                  <span className="text-xs text-muted">Réservation bientôt disponible</span>
-                </div>
-              </Card>
+              <Link to={`/reserver/${s.id}`} className="group block h-full rounded-2xl">
+                <Card className="flex h-full flex-col gap-2 p-5 transition-all group-hover:border-brand group-hover:shadow-md">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-lg font-semibold">{s.name}</h3>
+                    <span className="font-medium whitespace-nowrap">{formatPrice(s.priceCents)}</span>
+                  </div>
+                  {s.description && <p className="text-sm text-muted">{s.description}</p>}
+                  <div className="mt-auto flex items-center justify-between pt-3">
+                    <Badge>{formatDuration(s.durationMinutes)}</Badge>
+                    <span className="text-sm font-medium text-brand">
+                      Réserver <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
+                    </span>
+                  </div>
+                </Card>
+              </Link>
             </li>
           ))}
         </ul>

@@ -14,6 +14,13 @@ export function useServices() {
   })
 }
 
+export function useService(id: number) {
+  return useQuery({
+    queryKey: [...keys.public, id],
+    queryFn: () => api.get<ServiceOffering>(`/api/services/${id}`),
+  })
+}
+
 export function useAdminServices() {
   return useQuery({
     queryKey: keys.admin,

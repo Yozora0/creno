@@ -49,3 +49,23 @@ export interface Closure {
 }
 
 export type ClosureInput = Omit<Closure, 'id'>
+
+export interface Slot {
+  startAt: string // instant ISO, à renvoyer tel quel pour réserver
+  endAt: string
+  time: string // "09:15", heure locale du salon
+}
+
+export type AppointmentStatus = 'BOOKED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED'
+
+export interface Appointment {
+  id: number
+  serviceId: number
+  serviceName: string
+  durationMinutes: number
+  priceCents: number
+  startAt: string
+  endAt: string
+  status: AppointmentStatus
+  cancellable: boolean
+}
