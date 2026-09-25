@@ -69,6 +69,11 @@ public class Appointment {
         return status == AppointmentStatus.BOOKED && !now.plus(notice).isAfter(startAt);
     }
 
+    /** Réservé aux données de démonstration : simule un RDV pris il y a quelque temps. */
+    public void backdateCreation(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public void cancel() {
         this.status = AppointmentStatus.CANCELLED;
     }

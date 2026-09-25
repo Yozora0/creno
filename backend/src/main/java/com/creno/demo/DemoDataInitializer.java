@@ -76,10 +76,16 @@ public class DemoDataInitializer implements ApplicationRunner {
             return;
         }
 
-        users.save(new User(ADMIN_EMAIL, passwordEncoder.encode("Admin123!"),
-                "Camille", "Martin", "02 54 00 00 00", Role.ADMIN));
-        User lea = users.save(new User(CLIENT_EMAIL, passwordEncoder.encode("Client123!"),
-                "Léa", "Durand", "06 12 34 56 78", Role.CLIENT));
+        User admin = new User(ADMIN_EMAIL, passwordEncoder.encode("Admin123!"),
+                "Camille", "Martin", "02 54 00 00 00", Role.ADMIN);
+        // Dernière connexion il y a 2 jours : à la première connexion de démo, les RDV pris depuis
+        // apparaissent comme « nouveaux » (toast + résumé du back-office).
+        admin.recordLogin(clock.instant().minus(Duration.ofDays(2)));
+        users.save(admin);
+        User lea = new User(CLIENT_EMAIL, passwordEncoder.encode("Client123!"),
+                "Léa", "Durand", "06 12 34 56 78", Role.CLIENT);
+        lea.recordLogin(clock.instant().minus(Duration.ofDays(1)));
+        users.save(lea);
 
         // Autres clients fictifs : mot de passe aléatoire, ils ne servent qu'à remplir le planning.
         String unusable = passwordEncoder.encode(UUID.randomUUID().toString());
@@ -135,7 +141,14 @@ public class DemoDataInitializer implements ApplicationRunner {
                 Appointment a = new Appointment(clients.get(turn % clients.size()), service, start,
                         start.plus(Duration.ofMinutes(service.getDurationMinutes())));
                 if (start.isBefore(now)) {
+                    a.backdateCreation(start.minus(Duration.ofDays(3)));
                     a.changeStatusByShop(turn % 5 == 0 ? AppointmentStatus.NO_SHOW : AppointmentStatus.COMPLETED, now);
+                } else {
+                    // Un RDV à venir sur trois a été pris il y a quelques heures (donc « nouveau »),
+                    // les autres il y a plusieurs jours.
+                    a.backdateCreation(turn % 3 == 0
+                            ? now.minus(Duration.ofHours(3 + turn % 5))
+                            : now.minus(Duration.ofDays(3 + turn % 4)));
                 }
                 appointments.save(a);
                 previousEnd = a.getEndAt();

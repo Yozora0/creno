@@ -40,6 +40,13 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
+
+    /** Connexion d'avant la connexion en cours : référence pour savoir ce qui est « nouveau ». */
+    @Column(name = "previous_login_at")
+    private Instant previousLoginAt;
+
     protected User() {
         // requis par JPA
     }
@@ -54,6 +61,12 @@ public class User {
         this.createdAt = Instant.now();
     }
 
+    /** À chaque connexion, l'ancienne « dernière connexion » devient la connexion précédente. */
+    public void recordLogin(Instant now) {
+        this.previousLoginAt = this.lastLoginAt;
+        this.lastLoginAt = now;
+    }
+
     public Long getId() { return id; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
@@ -62,4 +75,6 @@ public class User {
     public String getPhone() { return phone; }
     public Role getRole() { return role; }
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getLastLoginAt() { return lastLoginAt; }
+    public Instant getPreviousLoginAt() { return previousLoginAt; }
 }

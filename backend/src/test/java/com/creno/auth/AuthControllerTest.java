@@ -100,4 +100,21 @@ class AuthControllerTest extends AbstractIntegrationTest {
     void me_withoutToken_isUnauthorized() throws Exception {
         mockMvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void login_exposesThePreviousLoginDate() throws Exception {
+        String email = uniqueEmail("visits");
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(registerRequest(email))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.previousLoginAt").doesNotExist());
+
+        // L'inscription compte comme première connexion : la connexion suivante la renvoie comme « précédente ».
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(new LoginRequest(email, "Password123!"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.previousLoginAt").isNotEmpty());
+    }
 }

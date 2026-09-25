@@ -19,6 +19,7 @@ import com.creno.common.NotFoundException;
 import com.creno.config.BusinessProperties;
 import com.creno.offering.ServiceOffering;
 import com.creno.offering.ServiceOfferingRepository;
+import com.creno.user.User;
 import com.creno.user.UserRepository;
 
 @Service
@@ -115,6 +116,22 @@ public class AppointmentService {
         ZoneId zone = business.zoneId();
         return appointments.findForPlanning(from.atStartOfDay(zone).toInstant(),
                         to.plusDays(1).atStartOfDay(zone).toInstant()).stream()
+                .map(AdminAppointmentResponse::from)
+                .toList();
+    }
+
+    /**
+     * RDV pris depuis la connexion précédente du commerçant (pour le toast et le résumé du back-office).
+     * Première connexion : pas de référence, donc rien de « nouveau ».
+     */
+    @Transactional(readOnly = true)
+    public List<AdminAppointmentResponse> bookedSinceLastVisit(Long adminId) {
+        User admin = users.findById(adminId).orElseThrow(() -> NotFoundException.of("Utilisateur", adminId));
+        if (admin.getPreviousLoginAt() == null) {
+            return List.of();
+        }
+        return appointments.findBookedCreatedSince(admin.getPreviousLoginAt()).stream()
+                .limit(50)
                 .map(AdminAppointmentResponse::from)
                 .toList();
     }

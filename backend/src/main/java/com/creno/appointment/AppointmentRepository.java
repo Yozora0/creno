@@ -38,6 +38,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             """)
     Optional<Appointment> findWithDetails(@Param("id") Long id);
 
+    /** RDV encore réservés, pris après une date donnée (les plus récents d'abord). */
+    @Query("""
+            select a from Appointment a join fetch a.service join fetch a.client
+            where a.createdAt > :since and a.status = com.creno.appointment.AppointmentStatus.BOOKED
+            order by a.createdAt desc
+            """)
+    List<Appointment> findBookedCreatedSince(@Param("since") Instant since);
+
     /** Planning du commerçant : RDV commençant dans [from, to), avec prestation et client. */
     @Query("""
             select a from Appointment a join fetch a.service join fetch a.client

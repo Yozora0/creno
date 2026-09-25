@@ -11,6 +11,7 @@ public record AdminAppointmentResponse(
         Instant startAt,
         Instant endAt,
         AppointmentStatus status,
+        Instant createdAt,
         Long serviceId,
         String serviceName,
         int priceCents,
@@ -22,7 +23,7 @@ public record AdminAppointmentResponse(
     static AdminAppointmentResponse from(Appointment a) {
         ServiceOffering s = a.getService();
         User c = a.getClient();
-        return new AdminAppointmentResponse(a.getId(), a.getStartAt(), a.getEndAt(), a.getStatus(),
+        return new AdminAppointmentResponse(a.getId(), a.getStartAt(), a.getEndAt(), a.getStatus(), a.getCreatedAt(),
                 s.getId(), s.getName(), s.getPriceCents(),
                 c.getId(), c.getFirstName() + " " + c.getLastName(), c.getEmail(), c.getPhone());
     }

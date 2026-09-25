@@ -1,5 +1,7 @@
 package com.creno.auth;
 
+import java.time.Clock;
+
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,10 +21,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
-    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, TokenService tokenService) {
+    private final Clock clock;
+
+    public AuthService(UserRepository users, PasswordEncoder passwordEncoder, TokenService tokenService, Clock clock) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.clock = clock;
     }
 
     /** L'inscription publique crée toujours un CLIENT : un admin ne peut pas s'auto-déclarer. */
@@ -40,15 +45,17 @@ public class AuthService {
                 request.lastName().trim(),
                 StringUtils.hasText(request.phone()) ? request.phone().trim() : null,
                 Role.CLIENT));
+        user.recordLogin(clock.instant()); // l'inscription vaut première connexion
         return tokenService.issue(user);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = users.findByEmail(request.email())
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
                 // Même message que l'email existe ou non : on ne révèle pas les comptes existants.
                 .orElseThrow(() -> new BadCredentialsException("invalid credentials"));
+        user.recordLogin(clock.instant());
         return tokenService.issue(user);
     }
 

@@ -118,4 +118,38 @@ class AdminAppointmentControllerTest extends AbstractIntegrationTest {
 
         changeStatus(id, "PAYE").andExpect(status().isBadRequest());
     }
+
+    @Test
+    void recent_listsBookingsMadeSinceThePreviousLogin() throws Exception {
+        User shopOwner = new User(uniqueEmail("owner"), "x", "Camille", "Martin", null, Role.ADMIN);
+        shopOwner.recordLogin(Instant.now().minus(1, ChronoUnit.HOURS)); // connexion précédente
+        shopOwner.recordLogin(Instant.now());                            // connexion en cours
+        shopOwner = userRepository.save(shopOwner);
+        String token = "Bearer " + tokenService.issue(shopOwner).token();
+
+        Instant oldStart = Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+        Appointment old = new Appointment(client, service, oldStart, oldStart.plus(Duration.ofMinutes(60)));
+        old.backdateCreation(Instant.now().minus(2, ChronoUnit.HOURS)); // pris avant la connexion précédente
+        appointments.save(old); // (created_at n'est pas modifiable après insertion : on date avant d'enregistrer)
+        long fresh = appointmentAt(Instant.now().plus(3, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS)).getId();
+        Appointment cancelled = appointmentAt(Instant.now().plus(4, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS));
+        cancelled.cancel();
+        appointments.save(cancelled);
+
+        mockMvc.perform(get("/api/admin/appointments/recent").header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value((int) fresh))
+                .andExpect(jsonPath("$[0].createdAt").isNotEmpty());
+    }
+
+    @Test
+    void recent_isEmptyOnFirstLogin() throws Exception {
+        appointmentAt(Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS));
+
+        // Compte sans connexion précédente : aucune référence, donc rien de « nouveau ».
+        mockMvc.perform(get("/api/admin/appointments/recent").header("Authorization", admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
 }

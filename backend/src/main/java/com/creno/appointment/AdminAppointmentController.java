@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +33,12 @@ public class AdminAppointmentController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return appointmentService.planning(from, to);
+    }
+
+    /** RDV pris depuis la connexion précédente du commerçant connecté. */
+    @GetMapping("/recent")
+    public List<AdminAppointmentResponse> recent(@AuthenticationPrincipal Jwt jwt) {
+        return appointmentService.bookedSinceLastVisit(Long.valueOf(jwt.getSubject()));
     }
 
     @PatchMapping("/{id}/status")
