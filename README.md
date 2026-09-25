@@ -60,7 +60,7 @@ Le code back est organisé **par fonctionnalité** (et non par couche technique)
 
 ## Lancer le projet en local
 
-**Prérequis** : Docker, Java 21, Maven, Node 22.
+**Prérequis** : Docker, Java 21 et Node 22. Maven n'a pas besoin d'être installé : le projet embarque le Maven Wrapper (`mvnw`), qui télécharge la bonne version au premier lancement.
 
 ```bash
 # 1. Base de données
@@ -68,7 +68,7 @@ docker compose up -d db
 
 # 2. API (profil "demo" = données de démonstration)
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=demo
+./mvnw spring-boot:run -Dspring-boot.run.profiles=demo   # Windows : .\mvnw.cmd ...
 # → http://localhost:8080/swagger-ui.html
 
 # 3. Front
@@ -90,7 +90,7 @@ Variante sans Java ni Maven installés : `docker compose --profile full up -d --
 ## Tests
 
 ```bash
-cd backend && mvn verify      # tests unitaires + intégration (PostgreSQL via Testcontainers, Docker requis)
+cd backend && ./mvnw verify      # tests unitaires + intégration (PostgreSQL via Testcontainers, Docker requis)
 cd frontend && npm run lint && npm run build
 ```
 

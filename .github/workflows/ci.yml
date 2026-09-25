@@ -20,7 +20,7 @@ jobs:
           java-version: 21
           cache: maven
       # Les tests d'intégration démarrent un vrai PostgreSQL via Testcontainers (Docker est dispo sur les runners)
-      - run: mvn -B verify
+      - run: ./mvnw -B verify
 
   frontend:
     name: Front-end (React)
