@@ -152,6 +152,7 @@ Documentation complète et interactive : `/swagger-ui.html`.
 - **Base** PostgreSQL sur [Neon](https://neon.tech), transmise à l'API par `DB_URL` (au format JDBC, connexion directe), `DB_USER` et `DB_PASSWORD`.
 - **Front** sur [Vercel](https://vercel.com) : dossier racine `frontend`, variable `VITE_API_URL` = URL de l'API. `vercel.json` redirige toutes les routes vers `index.html` (application monopage).
 - Côté API, `CORS_ALLOWED_ORIGINS` et `FRONTEND_URL` reçoivent l'URL du front.
+- **Démarrage à froid.** L'offre gratuite de Render endort l'API après 15 minutes d'inactivité et ne lui donne qu'une fraction de processeur. L'image Docker est optimisée pour ce cas : compilateur JIT C1 seul, ramasse-miettes série, et archive **CDS** (Class Data Sharing) générée pendant le build. Sur un seul cœur, le démarrage passe de 23 s à 6 s. Côté front, un message prévient le visiteur quand l'API se réveille.
 
 ## Feuille de route
 
