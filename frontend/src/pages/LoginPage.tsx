@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../auth/useAuth'
 import { AuthShell } from '../components/AuthShell'
-import { Alert, Button, Field, Input } from '../components/ui'
+import { Alert, Button, Field, Input, PasswordInput } from '../components/ui'
 
 const schema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email('Adresse email invalide')),
@@ -51,9 +51,8 @@ export function LoginPage() {
           <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register('email')} />
         </Field>
         <Field label="Mot de passe" htmlFor="password" error={errors.password?.message}>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             aria-invalid={!!errors.password}
             {...register('password')}

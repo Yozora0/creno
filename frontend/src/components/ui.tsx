@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
-import { forwardRef } from 'react'
+import { forwardRef, useState } from 'react'
 import { Link, type LinkProps } from 'react-router'
 import { cx } from '../lib/cx'
 
@@ -75,6 +75,40 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
 ) {
   return <input ref={ref} className={cx(inputClass, className)} {...props} />
 })
+
+/**
+ * Champ mot de passe avec bouton « afficher / masquer ».
+ * Le bouton est un vrai <button type="button"> (accessible au clavier, annoncé par les lecteurs d'écran)
+ * qui ne soumet pas le formulaire.
+ */
+export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>>(
+  function PasswordInput({ className, ...props }, ref) {
+    const [visible, setVisible] = useState(false)
+    return (
+      <div className="relative">
+        <input
+          ref={ref}
+          type={visible ? 'text' : 'password'}
+          className={cx(inputClass, 'pr-12', className)}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          aria-pressed={visible}
+          aria-controls={props.id}
+          className="absolute inset-y-0 right-1.5 my-auto flex size-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+        >
+          <Icon name={visible ? 'eyeOff' : 'eye'} className="size-5" />
+        </button>
+      </div>
+    )
+  },
+)
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function Select(
   { className, ...props },
@@ -226,6 +260,9 @@ const iconPaths = {
   arrow: 'M5 12h14M13 6l6 6-6 6',
   undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
   menu: 'M4 7h16M4 12h16M4 17h16',
+  eye: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  eyeOff:
+    'M3 3l18 18M10.6 5.6A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 4M6.6 6.6A17 17 0 0 0 2.5 12s3.5 6.5 9.5 6.5a9.3 9.3 0 0 0 4.7-1.3M9.9 9.9a3 3 0 0 0 4.2 4.2',
   close: 'M6 6l12 12M18 6 6 18',
   scissors: 'M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM8.1 7.9 20 20M8.1 16.1 20 4',
 } as const
