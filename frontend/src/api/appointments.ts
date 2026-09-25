@@ -94,3 +94,12 @@ export function useNextSlot(serviceId: number | undefined, fromDate: string) {
     },
   })
 }
+
+/** RDV pris depuis la connexion précédente du commerçant. */
+export function useRecentBookings(enabled = true) {
+  return useQuery({
+    queryKey: ['admin', 'appointments', 'recent'],
+    queryFn: () => api.get<AdminAppointment[]>('/api/admin/appointments/recent'),
+    enabled,
+  })
+}

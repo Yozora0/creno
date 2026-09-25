@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { useAdminPlanning, useChangeAppointmentStatus } from '../../api/appointments'
+import { useAdminPlanning, useChangeAppointmentStatus, useRecentBookings } from '../../api/appointments'
+import { useAuth } from '../../auth/useAuth'
+import { NewBadge } from '../../components/NewBadge'
 import { useOpeningHours } from '../../api/schedule'
 import { Alert, Badge, Button, Card, Spinner } from '../../components/ui'
 import {
@@ -10,6 +12,8 @@ import {
   formatPrice,
   SHOP_TIME_ZONE,
   todayInShop,
+  shopDateOf,
+  relativeDay,
 } from '../../lib/format'
 import type { AdminAppointment, AppointmentStatus } from '../../lib/types'
 
@@ -31,6 +35,7 @@ function mondayOf(isoDate: string) {
 }
 
 export function PlanningPage() {
+  const { user } = useAuth()
   const today = todayInShop()
   const [weekStart, setWeekStart] = useState(() => mondayOf(today))
   const [showCancelled, setShowCancelled] = useState(false)
@@ -38,6 +43,8 @@ export function PlanningPage() {
   const weekEnd = addDays(weekStart, 6)
 
   const { data, isPending, isError, error, isPlaceholderData } = useAdminPlanning(weekStart, weekEnd)
+  const recent = useRecentBookings()
+  const recentIds = new Set(recent.data?.map((a) => a.id))
   const openingHours = useOpeningHours()
   const changeStatus = useChangeAppointmentStatus()
 
@@ -57,6 +64,14 @@ export function PlanningPage() {
 
   return (
     <div className="space-y-6">
+      {recent.data && recent.data.length > 0 && (
+        <RecentSummary
+          appointments={recent.data}
+          since={user?.previousLoginAt ?? null}
+          onOpenWeek={(iso) => setWeekStart(mondayOf(shopDateOf(iso)))}
+        />
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button
@@ -134,6 +149,7 @@ export function PlanningPage() {
                         key={a.id}
                         appointment={a}
                         started={new Date(a.startAt).getTime() <= now}
+                        isNew={recentIds.has(a.id)}
                         pending={changeStatus.isPending && changeStatus.variables?.id === a.id}
                         onChange={(status) => onChange(a, status)}
                       />
@@ -161,11 +177,13 @@ function Stat({ label, value }: { label: string; value: string }) {
 function PlanningRow({
   appointment: a,
   started,
+  isNew,
   pending,
   onChange,
 }: {
   appointment: AdminAppointment
   started: boolean
+  isNew: boolean
   pending: boolean
   onChange: (status: AppointmentStatus) => void
 }) {
@@ -179,7 +197,10 @@ function PlanningRow({
       </span>
       {/* Sur mobile : horaire + statut sur la 1re ligne, client sur la 2e */}
       <div className="order-3 min-w-0 basis-full sm:order-none sm:flex-1 sm:basis-auto">
-        <p className="truncate text-sm font-medium">{a.clientName}</p>
+        <p className="flex items-center gap-2 text-sm font-medium">
+          <span className="truncate">{a.clientName}</span>
+          {isNew && <NewBadge />}
+        </p>
         <p className="truncate text-xs text-muted">
           {a.serviceName} · {formatPrice(a.priceCents)}
           {a.clientPhone && (
@@ -223,5 +244,65 @@ function PlanningRow({
         )}
       </div>
     </li>
+  )
+}
+
+/** Encadré « nouveaux RDV depuis votre dernière connexion ». Un clic ouvre la semaine du RDV. */
+function RecentSummary({
+  appointments,
+  since,
+  onOpenWeek,
+}: {
+  appointments: AdminAppointment[]
+  since: string | null
+  onOpenWeek: (startAt: string) => void
+}) {
+  const shown = appointments.slice(0, 5)
+  const revenue = appointments.reduce((sum, a) => sum + a.priceCents, 0)
+
+  return (
+    <Card padding="p-0" className="overflow-hidden border-accent/40">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-accent-soft/60 px-5 py-4">
+        <div>
+          <p className="flex items-center gap-2 font-display text-xl">
+            {appointments.length} nouveau{appointments.length > 1 ? 'x' : ''} rendez-vous <NewBadge />
+          </p>
+          {since && (
+            <p className="text-xs text-muted">
+              Depuis votre dernière connexion, {relativeDay(shopDateOf(since)).toLowerCase()} à{' '}
+              {formatInstantTime(since)}
+            </p>
+          )}
+        </div>
+        <p className="text-sm text-muted">
+          <span className="font-display text-xl text-ink">{formatPrice(revenue)}</span> de chiffre d'affaires prévu
+        </p>
+      </div>
+      <ul className="divide-y divide-line">
+        {shown.map((a) => (
+          <li key={a.id}>
+            <button
+              type="button"
+              onClick={() => onOpenWeek(a.startAt)}
+              className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-left text-sm transition-colors hover:bg-paper"
+            >
+              <span className="font-medium first-letter:uppercase sm:w-56">
+                {relativeDay(shopDateOf(a.startAt))} · {formatInstantTime(a.startAt)}
+              </span>
+              <span className="flex-1 text-muted">
+                {a.clientName} · {a.serviceName}
+              </span>
+              <span className="text-xs text-brand">Voir la semaine →</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {appointments.length > shown.length && (
+        <p className="border-t border-line px-5 py-3 text-xs text-muted">
+          et {appointments.length - shown.length} autre{appointments.length - shown.length > 1 ? 's' : ''}, signalé
+          {appointments.length - shown.length > 1 ? 's' : ''} par le tag « Nouveau » dans le planning.
+        </p>
+      )}
+    </Card>
   )
 }

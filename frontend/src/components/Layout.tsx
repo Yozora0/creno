@@ -1,6 +1,7 @@
 import { startTransition, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useToast } from '../toast/useToast'
 import { SHOP } from '../lib/shop'
 import { cx } from '../lib/cx'
 import { ButtonLink, Icon } from './ui'
@@ -16,6 +17,7 @@ export function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const toast = useToast()
 
   // Remonte en haut de page à chaque navigation (sauf ancres).
   useEffect(() => {
@@ -36,7 +38,6 @@ export function Layout() {
    * 3. le voile se retire en fondu et un message confirme la déconnexion.
    */
   const [leaving, setLeaving] = useState<'covering' | 'revealing' | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
   const timers = useRef<number[]>([])
   useEffect(() => () => timers.current.forEach(window.clearTimeout), [])
   const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms))
@@ -54,9 +55,8 @@ export function Layout() {
         logout()
       })
       setLeaving('revealing')
-      setToast(firstName ? `À bientôt, ${firstName} ! Vous êtes déconnecté.` : 'Vous êtes déconnecté.')
+      toast(firstName ? `À bientôt, ${firstName} ! Vous êtes déconnecté.` : 'Vous êtes déconnecté.', { duration: 3500 })
       later(() => setLeaving(null), 450)
-      later(() => setToast(null), 3500)
     }, 320)
   }
 
@@ -164,15 +164,6 @@ export function Layout() {
             <img src="/favicon.svg" alt="" className="size-12" />
             <p className="font-display text-2xl text-ink italic">À bientôt</p>
           </div>
-        </div>
-      )}
-
-      {toast && (
-        <div role="status" className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-          <p className="flex animate-fade-up items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm text-paper shadow-lift">
-            <Icon name="check" className="size-4 text-accent" />
-            {toast}
-          </p>
         </div>
       )}
     </div>

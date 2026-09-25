@@ -7,6 +7,8 @@ export interface User {
   lastName: string
   phone: string | null
   role: Role
+  /** Connexion précédente (null à la première) : sert à repérer ce qui est nouveau. */
+  previousLoginAt: string | null
 }
 
 export interface AuthResponse {
@@ -60,6 +62,7 @@ export interface Appointment {
   startAt: string
   endAt: string
   status: AppointmentStatus
+  createdAt: string
   cancellable: boolean
 }
 
@@ -68,6 +71,7 @@ export interface AdminAppointment {
   startAt: string
   endAt: string
   status: AppointmentStatus
+  createdAt: string
   serviceId: number
   serviceName: string
   priceCents: number

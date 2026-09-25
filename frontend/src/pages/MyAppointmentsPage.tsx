@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router'
 import { useCancelAppointment, useMyAppointments } from '../api/appointments'
+import { useAuth } from '../auth/useAuth'
+import { NewBadge } from '../components/NewBadge'
 import { Alert, Badge, Button, ButtonLink, Card, Page, PageHeader, Spinner } from '../components/ui'
 import { formatDuration, formatInstantDay, formatInstantTime, formatPrice } from '../lib/format'
+import { isNewSince } from '../lib/novelty'
 import type { Appointment, AppointmentStatus } from '../lib/types'
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
@@ -15,6 +18,7 @@ const STATUS_LABEL: Record<AppointmentStatus, string> = {
 export function MyAppointmentsPage() {
   const { data, isPending, isError, error } = useMyAppointments()
   const cancel = useCancelAppointment()
+  const { user } = useAuth()
   const bookedId = (useLocation().state as { bookedId?: number } | null)?.bookedId
   const [now] = useState(() => Date.now()) // figé au montage : le rendu reste pur
 
@@ -59,7 +63,12 @@ export function MyAppointmentsPage() {
         <h2 className="text-2xl font-medium">À venir</h2>
         {upcoming.length === 0 && <Card className="text-center text-sm text-muted">Aucun rendez-vous à venir.</Card>}
         {upcoming.map((a) => (
-          <AppointmentCard key={a.id} appointment={a} highlighted={a.id === bookedId}>
+          <AppointmentCard
+            key={a.id}
+            appointment={a}
+            highlighted={a.id === bookedId}
+            isNew={isNewSince(a.createdAt, user?.previousLoginAt)}
+          >
             {a.cancellable ? (
               <Button
                 variant="danger"
@@ -92,11 +101,13 @@ export function MyAppointmentsPage() {
 function AppointmentCard({
   appointment: a,
   highlighted,
+  isNew,
   muted,
   children,
 }: {
   appointment: Appointment
   highlighted?: boolean
+  isNew?: boolean
   muted?: boolean
   children: React.ReactNode
 }) {
@@ -112,7 +123,10 @@ function AppointmentCard({
           <span className="font-display text-xl">{formatInstantTime(a.startAt)}</span>
         </div>
         <div>
-          <p className="font-medium first-letter:uppercase">{formatInstantDay(a.startAt)}</p>
+          <p className="flex flex-wrap items-center gap-2 font-medium">
+            <span className="first-letter:uppercase">{formatInstantDay(a.startAt)}</span>
+            {isNew && <NewBadge />}
+          </p>
           <p className="text-sm text-muted">
             {a.serviceName} · {formatDuration(a.durationMinutes)} · {formatPrice(a.priceCents)}
           </p>
