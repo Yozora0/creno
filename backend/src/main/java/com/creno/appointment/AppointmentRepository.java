@@ -30,4 +30,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findAllForClient(@Param("clientId") Long clientId);
 
     Optional<Appointment> findByIdAndClientId(Long id, Long clientId);
+
+    /** RDV avec sa prestation et son client, pour construire un email hors transaction. */
+    @Query("""
+            select a from Appointment a join fetch a.service join fetch a.client
+            where a.id = :id
+            """)
+    Optional<Appointment> findWithDetails(@Param("id") Long id);
+
+    /** Planning du commerçant : RDV commençant dans [from, to), avec prestation et client. */
+    @Query("""
+            select a from Appointment a join fetch a.service join fetch a.client
+            where a.startAt >= :from and a.startAt < :to
+            order by a.startAt
+            """)
+    List<Appointment> findForPlanning(@Param("from") Instant from, @Param("to") Instant to);
 }

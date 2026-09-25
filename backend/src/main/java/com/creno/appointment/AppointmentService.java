@@ -2,8 +2,12 @@ package com.creno.appointment;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,16 +32,18 @@ public class AppointmentService {
     private final AvailabilityService availability;
     private final BusinessProperties business;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public AppointmentService(AppointmentRepository appointments, ServiceOfferingRepository services,
                               UserRepository users, AvailabilityService availability,
-                              BusinessProperties business, Clock clock) {
+                              BusinessProperties business, Clock clock, ApplicationEventPublisher events) {
         this.appointments = appointments;
         this.services = services;
         this.users = users;
         this.availability = availability;
         this.business = business;
         this.clock = clock;
+        this.events = events;
     }
 
     /**
@@ -68,6 +74,8 @@ public class AppointmentService {
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException(SLOT_TAKEN);
         }
+        // L'email part après le commit (cf. AppointmentNotifier) : pas d'email pour une réservation annulée par un rollback.
+        events.publishEvent(new AppointmentEvent(AppointmentEvent.Type.BOOKED, appointment.getId()));
         return toResponse(appointment);
     }
 
@@ -90,7 +98,36 @@ public class AppointmentService {
                     + business.cancellationNotice().toHours() + " h avant le rendez-vous. Merci de contacter le salon.");
         }
         appointment.cancel();
+        events.publishEvent(new AppointmentEvent(AppointmentEvent.Type.CANCELLED_BY_CLIENT, appointment.getId()));
         return toResponse(appointment);
+    }
+
+    // ---------- Côté commerçant ----------
+
+    @Transactional(readOnly = true)
+    public List<AdminAppointmentResponse> planning(LocalDate from, LocalDate to) {
+        if (to.isBefore(from)) {
+            throw new BusinessRuleException("La date de fin doit suivre la date de début.");
+        }
+        if (ChronoUnit.DAYS.between(from, to) > 31) {
+            throw new BusinessRuleException("La période demandée ne peut pas dépasser 31 jours.");
+        }
+        ZoneId zone = business.zoneId();
+        return appointments.findForPlanning(from.atStartOfDay(zone).toInstant(),
+                        to.plusDays(1).atStartOfDay(zone).toInstant()).stream()
+                .map(AdminAppointmentResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public AdminAppointmentResponse changeStatusByShop(Long appointmentId, AppointmentStatus target) {
+        Appointment appointment = appointments.findById(appointmentId)
+                .orElseThrow(() -> NotFoundException.of("Rendez-vous", appointmentId));
+        appointment.changeStatusByShop(target, clock.instant());
+        if (target == AppointmentStatus.CANCELLED) {
+            events.publishEvent(new AppointmentEvent(AppointmentEvent.Type.CANCELLED_BY_SHOP, appointment.getId()));
+        }
+        return AdminAppointmentResponse.from(appointment);
     }
 
     private AppointmentResponse toResponse(Appointment a) {

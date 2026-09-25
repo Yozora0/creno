@@ -3,6 +3,7 @@ package com.creno.appointment;
 import java.time.Duration;
 import java.time.Instant;
 
+import com.creno.common.BusinessRuleException;
 import com.creno.offering.ServiceOffering;
 import com.creno.user.User;
 
@@ -70,6 +71,34 @@ public class Appointment {
 
     public void cancel() {
         this.status = AppointmentStatus.CANCELLED;
+    }
+
+    /**
+     * Changement de statut par le commerçant. Règles :
+     * <ul>
+     *   <li>annuler : seulement un RDV encore réservé ;</li>
+     *   <li>honoré / absent : seulement une fois le RDV commencé (on peut corriger l'un en l'autre) ;</li>
+     *   <li>jamais de retour à « réservé » : le créneau a pu être repris entre-temps.</li>
+     * </ul>
+     */
+    public void changeStatusByShop(AppointmentStatus target, Instant now) {
+        switch (target) {
+            case CANCELLED -> {
+                if (status != AppointmentStatus.BOOKED) {
+                    throw new BusinessRuleException("Seul un rendez-vous réservé peut être annulé.");
+                }
+            }
+            case COMPLETED, NO_SHOW -> {
+                if (status == AppointmentStatus.CANCELLED) {
+                    throw new BusinessRuleException("Ce rendez-vous a été annulé.");
+                }
+                if (now.isBefore(startAt)) {
+                    throw new BusinessRuleException("Le rendez-vous n'a pas encore commencé.");
+                }
+            }
+            case BOOKED -> throw new BusinessRuleException("Un rendez-vous ne peut pas repasser à l'état réservé.");
+        }
+        this.status = target;
     }
 
     public Long getId() { return id; }
