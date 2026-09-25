@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
@@ -46,9 +48,16 @@ class AuthControllerTest extends AbstractIntegrationTest {
                         .content(json(registerRequest(email))))
                 .andExpect(status().isCreated());
 
+        // JSON brut : passer par le record RegisterRequest normaliserait l'email côté test.
+        Map<String, String> sameEmailDifferentCase = Map.of(
+                "email", "  " + email.toUpperCase() + " ",
+                "password", "Password123!",
+                "firstName", "Léa",
+                "lastName", "Durand");
+
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(registerRequest("  " + email.toUpperCase() + " "))))
+                        .content(json(sameEmailDifferentCase)))
                 .andExpect(status().isConflict());
     }
 

@@ -7,7 +7,7 @@ import { useAuth } from '../auth/useAuth'
 import { Alert, Button, Card, Field, Input } from '../components/ui'
 
 const schema = z.object({
-  email: z.email('Adresse email invalide'),
+  email: z.string().trim().toLowerCase().pipe(z.email('Adresse email invalide')),
   password: z.string().min(1, 'Mot de passe requis'),
 })
 

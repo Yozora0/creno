@@ -1,7 +1,5 @@
 package com.creno.auth;
 
-import java.util.Locale;
-
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,7 +28,8 @@ public class AuthService {
     /** L'inscription publique crée toujours un CLIENT : un admin ne peut pas s'auto-déclarer. */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        String email = normalize(request.email());
+        // L'email est déjà normalisé (trim + minuscules) par RegisterRequest.
+        String email = request.email();
         if (users.existsByEmail(email)) {
             throw new ConflictException("Un compte existe déjà avec cet email.");
         }
@@ -46,7 +45,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = users.findByEmail(normalize(request.email()))
+        User user = users.findByEmail(request.email())
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
                 // Même message que l'email existe ou non : on ne révèle pas les comptes existants.
                 .orElseThrow(() -> new BadCredentialsException("invalid credentials"));
@@ -58,9 +57,5 @@ public class AuthService {
         return users.findById(userId)
                 .map(UserResponse::from)
                 .orElseThrow(() -> NotFoundException.of("Utilisateur", userId));
-    }
-
-    private static String normalize(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

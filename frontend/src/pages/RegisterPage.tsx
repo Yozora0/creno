@@ -12,7 +12,7 @@ import { ApiError } from '../lib/api'
 const schema = z.object({
   firstName: z.string().trim().min(1, 'Prénom requis').max(100),
   lastName: z.string().trim().min(1, 'Nom requis').max(100),
-  email: z.email('Adresse email invalide'),
+  email: z.string().trim().toLowerCase().pipe(z.email('Adresse email invalide')),
   phone: z
     .string()
     .trim()
