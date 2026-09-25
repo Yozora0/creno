@@ -1,8 +1,12 @@
+server:
+  port: ${PORT:8080} # les hébergeurs (Render, Railway…) imposent le port via $PORT
+
 spring:
   application:
     name: creno
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/creno}
+    # DB_URL complète, ou bien DB_HOST / DB_PORT / DB_NAME (format fourni par Render)
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:creno}}
     username: ${DB_USER:creno}
     password: ${DB_PASSWORD:creno}
   jpa:
@@ -20,6 +24,11 @@ creno:
   jwt:
     secret: ${JWT_SECRET:change-me-this-is-a-local-dev-secret-of-32-bytes-min}
     expiration: PT8H
+  mail:
+    # Sans SPRING_MAIL_HOST, les emails ne sont pas envoyés mais écrits dans les logs.
+    from: "Salon Camille <no-reply@creno.dev>"
+    shop-name: Salon Camille
+    frontend-url: ${FRONTEND_URL:http://localhost:5173}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   business:
@@ -34,6 +43,9 @@ springdoc:
     path: /swagger-ui.html
 
 management:
+  health:
+    mail:
+      enabled: false # un SMTP indisponible ne doit pas marquer l'API comme hors service
   endpoints:
     web:
       exposure:
