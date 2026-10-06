@@ -26,7 +26,9 @@ STATUTS = {"BOOKED": "réservé", "COMPLETED": "honoré", "NO_SHOW": "absent", "
 mcp = MCPServer(
     "creno",
     instructions=(
-        "Outils du commerçant Créno (prise de RDV). Réponds en français. Les heures sont celles du commerce. "
+        "Outils de gestion d'un salon sur Créno (prise de RDV en ligne). Ton interlocuteur est le commerçant "
+        "lui-même, jamais un client : tutoie-le, parle de « tes rendez-vous », « tes clients », et ne lui propose "
+        "pas de réserver. Réponds en français, de façon concise. Les heures sont celles du commerce. "
         "Avant toute action d'écriture, récapitule-la et attends une confirmation explicite."
     ),
 )

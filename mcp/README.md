@@ -74,6 +74,13 @@ Bot créé sur le [portail développeur](https://discord.com/developers/applicat
 `DISCORD_ALLOWED_USERS` dans `~/.hermes/.env`) et `hermes gateway`.
 Voir la [doc Discord d'Hermes](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/discord).
 
+## Données de démo
+
+Le jeu de démo de l'API est daté du premier déploiement : ses RDV finissent par être tous passés.
+[`demo/seed_agent_demo.sql`](demo/seed_agent_demo.sql), à coller dans la console SQL de Neon, ajoute 6 clients
+fictifs, des RDV sur les 14 prochains jours (dont des « nouveaux ») et un historique avec 2 clients inactifs.
+Il respecte les horaires, les fermetures et les RDV réels déjà réservés, et peut être rejoué pour recaler les dates.
+
 ## Tester sans Hermes
 
 ```bash
