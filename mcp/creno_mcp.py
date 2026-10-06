@@ -7,6 +7,7 @@ les seules écritures (statut d'un RDV, fermeture exceptionnelle) doivent être 
 from __future__ import annotations
 
 import os
+import secrets
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -229,35 +230,93 @@ def prestations() -> list[dict]:
     ]
 
 
-# ---------- outils d'écriture (confirmation obligatoire) ----------
+# ---------- outils d'écriture : confirmation en deux temps imposée par le serveur ----------
+#
+# Le premier appel ne modifie rien : il renvoie un récapitulatif et un code à usage unique.
+# L'action ne s'exécute qu'au second appel, avec ce code, pour exactement les mêmes paramètres.
+# Le code expire au bout de 10 minutes.
+
+CONFIRMATION_TTL = timedelta(minutes=10)
+_pending: dict[str, tuple[tuple, datetime]] = {}
+
+
+def _ask_confirmation(action: tuple, recap: dict) -> dict:
+    now = datetime.now(timezone.utc)
+    for code, (_, expires) in list(_pending.items()):
+        if expires < now:
+            del _pending[code]
+    code = f"{secrets.randbelow(9000) + 1000}"
+    _pending[code] = (action, now + CONFIRMATION_TTL)
+    return {
+        "etat": "EN ATTENTE DE CONFIRMATION - rien n'a été modifié",
+        "recapitulatif": recap,
+        "code_confirmation": code,
+        "consigne": (
+            "Montre ce récapitulatif au commerçant et demande-lui s'il confirme. Rappelle l'outil avec "
+            "code_confirmation uniquement après un « oui » explicite de sa part dans un nouveau message."
+        ),
+    }
+
+
+def _check_confirmation(code: str, action: tuple) -> None:
+    entry = _pending.pop(code.strip(), None)
+    if entry is None or entry[1] < datetime.now(timezone.utc):
+        raise ToolError("Code de confirmation invalide ou expiré : refais l'appel sans code pour en obtenir un.")
+    if entry[0] != action:
+        raise ToolError("Ce code a été émis pour une autre action : refais l'appel sans code.")
+
+
+def _find_rdv(rdv_id: int) -> dict:
+    today = datetime.now(TZ).date()
+    for a in _planning(today - timedelta(days=60), today + timedelta(days=90)):
+        if a["id"] == rdv_id:
+            return a
+    raise ToolError(f"Aucun rendez-vous n°{rdv_id} entre il y a 60 jours et dans 90 jours.")
+
 
 @mcp.tool(annotations=ECRITURE)
-def marquer_rdv(rdv_id: int, statut: str) -> dict:
-    """Change le statut d'un rendez-vous : 'honoré', 'absent' ou 'annulé'.
+def marquer_rdv(rdv_id: int, statut: str, code_confirmation: str | None = None) -> dict:
+    """Change le statut d'un rendez-vous : 'honoré', 'absent' ou 'annulé'. Une annulation libère le créneau.
 
-    ACTION D'ÉCRITURE : avant d'appeler cet outil, récapitule au commerçant le RDV concerné
-    (client, date, heure) et attends sa confirmation explicite. Une annulation libère le créneau.
+    Fonctionne en deux temps : appelle d'abord SANS code_confirmation (rien n'est modifié, tu reçois un
+    récapitulatif et un code), montre le récapitulatif au commerçant, puis rappelle avec le code
+    seulement s'il répond « oui ».
     """
     codes = {v: k for k, v in STATUTS.items() if k != "BOOKED"}
     code = codes.get(statut.strip().lower())
     if code is None:
         raise ToolError("Statut attendu : 'honoré', 'absent' ou 'annulé'.")
-    return _rdv(api.request("PATCH", f"/api/admin/appointments/{rdv_id}/status", json={"status": code}))
+    action = ("marquer_rdv", rdv_id, code)
+    if not code_confirmation:
+        rdv = _rdv(_find_rdv(rdv_id))
+        return _ask_confirmation(action, {"action": f"passer le RDV en « {STATUTS[code]} »", "rdv": rdv})
+    _check_confirmation(code_confirmation, action)
+    result = _rdv(api.request("PATCH", f"/api/admin/appointments/{rdv_id}/status", json={"status": code}))
+    return {"etat": "FAIT", "rdv": result}
 
 
 @mcp.tool(annotations=ECRITURE)
-def ajouter_fermeture(debut: str, fin: str, motif: str = "") -> dict:
+def ajouter_fermeture(debut: str, fin: str, motif: str = "", code_confirmation: str | None = None) -> dict:
     """Ferme le commerce sur des journées entières (dates incluses, AAAA-MM-JJ), ex. congés.
 
-    ACTION D'ÉCRITURE : confirme les dates avec le commerçant avant d'appeler. Les fermetures se font
-    à la journée : une demi-journée n'est pas possible. Les RDV déjà pris sur ces jours ne sont pas annulés :
-    vérifie-les avec rdv_periode et signale-les.
+    Une demi-journée n'est pas possible. Les RDV déjà pris ne sont pas annulés : ils sont listés pour
+    être prévenus. Fonctionne en deux temps comme marquer_rdv : d'abord sans code_confirmation, puis
+    avec le code après un « oui » du commerçant.
     """
     d1, d2 = _parse_date(debut, "debut"), _parse_date(fin, "fin")
-    deja_pris = [a for a in _planning(d1, d2) if a["status"] == "BOOKED"] if (d2 - d1).days <= 92 else []
+    if d2 < d1:
+        raise ToolError("La date de fin doit être égale ou postérieure à la date de début.")
+    action = ("ajouter_fermeture", d1, d2, motif.strip())
+    deja_pris = [_rdv(a) for a in _planning(d1, d2) if a["status"] == "BOOKED"] if (d2 - d1).days <= 92 else []
+    if not code_confirmation:
+        return _ask_confirmation(action, {
+            "action": f"fermer du {d1:%d/%m/%Y} au {d2:%d/%m/%Y} inclus" + (f" ({motif.strip()})" if motif.strip() else ""),
+            "rdv_deja_pris_a_prevenir": deja_pris,
+        })
+    _check_confirmation(code_confirmation, action)
     fermeture = api.request("POST", "/api/admin/closures",
-                            json={"startDate": d1.isoformat(), "endDate": d2.isoformat(), "reason": motif or None})
-    return {"fermeture": fermeture, "rdv_a_prevenir": [_rdv(a) for a in deja_pris]}
+                            json={"startDate": d1.isoformat(), "endDate": d2.isoformat(), "reason": motif.strip() or None})
+    return {"etat": "FAIT", "fermeture": fermeture, "rdv_a_prevenir": deja_pris}
 
 
 if __name__ == "__main__":

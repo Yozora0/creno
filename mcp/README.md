@@ -27,8 +27,10 @@ Discord ──► Hermes Agent ──stdio/MCP──► creno_mcp.py ──HTTPS
 ## Choix de sécurité
 
 - **Aucune suppression exposée** (prestations, fermetures, horaires restent gérés dans le back-office).
-- **Écritures sous confirmation** : les descriptions d'outils et les annotations MCP (`readOnlyHint`) imposent à l'agent
-  de récapituler l'action et d'attendre un « oui » explicite.
+- **Écritures en deux temps, imposées par le serveur** : le premier appel de `marquer_rdv` ou `ajouter_fermeture`
+  ne modifie rien et renvoie un récapitulatif avec un code à usage unique (10 min, lié aux paramètres exacts).
+  L'action ne s'exécute qu'au second appel avec ce code. Une simple consigne dans la description d'outil
+  ne suffisait pas : en test, un modèle gratuit a annulé un RDV sans rien demander.
 - **Droits portés par l'API** : le serveur se connecte avec un compte commerçant ; c'est Spring Security qui vérifie
   le rôle `ADMIN` sur `/api/admin/**`. Le JWT est gardé en mémoire et renouvelé à son expiration (8 h).
 - **Identifiants hors du code** : variables d'environnement uniquement (`.env` ignoré par git).
