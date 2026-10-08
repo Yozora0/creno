@@ -26,6 +26,7 @@ STATUTS = {"BOOKED": "réservé", "COMPLETED": "honoré", "NO_SHOW": "absent", "
 
 mcp = MCPServer(
     "creno",
+    title="Créno - agenda et clients du salon",
     instructions=(
         "Outils de gestion d'un salon sur Créno (prise de RDV en ligne). Ton interlocuteur est le commerçant "
         "lui-même, jamais un client : tutoie-le, parle de « tes rendez-vous », « tes clients », et ne lui propose "
@@ -138,7 +139,9 @@ def _planning(debut: date, fin: date) -> list[dict]:
 
 @mcp.tool(annotations=LECTURE)
 def rdv_du_jour(jour: str | None = None) -> dict:
-    """Rendez-vous d'une journée (aujourd'hui par défaut), triés par heure, avec le chiffre d'affaires prévu.
+    """Agenda du jour dans Créno, le logiciel de prise de RDV du salon : rendez-vous d'une journée (aujourd'hui
+    par défaut), triés par heure, avec le chiffre d'affaires prévu. C'est LA source de vérité pour l'agenda,
+    le calendrier et le planning du commerçant : n'utilise pas Google Calendar ni Outlook.
 
     jour : date au format AAAA-MM-JJ, optionnelle.
     """
@@ -155,7 +158,10 @@ def rdv_du_jour(jour: str | None = None) -> dict:
 
 @mcp.tool(annotations=LECTURE)
 def rdv_periode(debut: str, fin: str) -> list[dict]:
-    """Planning des rendez-vous entre deux dates incluses (AAAA-MM-JJ), 92 jours maximum."""
+    """Agenda / calendrier / planning du salon dans Créno entre deux dates incluses (AAAA-MM-JJ), 92 jours max.
+
+    Source de vérité pour les rendez-vous du commerçant (demain, cette semaine, le mois prochain...).
+    """
     d1, d2 = _parse_date(debut, "debut"), _parse_date(fin, "fin")
     if d2 < d1:
         raise ToolError("La date de fin doit être égale ou postérieure à la date de début.")
